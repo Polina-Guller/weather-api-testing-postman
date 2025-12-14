@@ -24,19 +24,28 @@ It covers weather data validation for public weather APIs and is designed as a p
 - Public Weather APIs
 
 ## Project Structure
+```
 postman/
 ├── collections/
-│ ├── openweather_collection.json
-│ └── open_meteo_collection.json
+│   ├── Weather API Testing Openweathermap.postman_collection.json
+│   └── Weather API Testing Open-meteo.postman_collection.json
+│
 ├── environments/
-│ ├── openweather_environment.json
-│ └── open_meteo_environment.json
+│   ├── openweather.postman_environment.json
+│   └── open-meteo.postman_environment.json
+│
+└── README.md
+```
 
 ## How to Run
-1. Import collections and environments into Postman
-2. Select the required environment
-3. Set your API key (for OpenWeather) locally in Postman
-4. Use Collection Runner to execute tests
+1. Import the required collection into Postman
+2. Import the corresponding environment
+3. Set your API key locally (for OpenWeather)
+4. Run requests via Collection Runner or manually
+
+Note:
+This project is primarily intended for demonstration and review.
+Collections are fully executable but not designed as a ready-to-run public tool.
 
 ## Notes
 - API keys are not stored in the repository for security reasons
@@ -44,4 +53,4 @@ postman/
 - The project runs entirely inside Postman without external dependencies
 
 ## Author
-Polina — QA Automation Engineer
+Polina Guller — QA Automation Engineer
