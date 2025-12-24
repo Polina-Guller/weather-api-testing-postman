@@ -1,4 +1,4 @@
-# Weather API Testing (Postman)
+# REST API Testing with Postman Validation, negative scenarios, and schema checks
 
 This project demonstrates API testing using Postman with a focus on functional and negative test scenarios.
 It covers weather data validation for public weather APIs and is designed as a portfolio project for QA Automation.
