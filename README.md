@@ -1,56 +1,59 @@
-# REST API Testing with Postman Validation, negative scenarios, and schema checks
+#  REST API Testing with Postman
+### Validation, Negative Scenarios, and Schema Checks
 
-This project demonstrates API testing using Postman with a focus on functional and negative test scenarios.
-It covers weather data validation for public weather APIs and is designed as a portfolio project for QA Automation.
+This project demonstrates REST API testing using **Postman**, focusing on functional validation, negative test scenarios, and response schema verification.  
+Designed as a **portfolio project** showcasing API testing practices for QA roles.
 
-## APIs Covered
-- OpenWeather API  
+---
+
+##  APIs Covered
+- **OpenWeather API**
   - Current Weather
   - 5-Day Forecast
-- Open-Meteo Historical Weather API
+- **Open-Meteo Historical Weather API**
 
-## Key Features
-- Positive and negative API test scenarios
-- Environment-based configuration
-- Pre-request scripts for dynamic negative testing
-- JSON Schema validation
-- Structured test naming and logging
-- Collection Runner support
+---
+
+##  Key Testing Areas
+- Positive and negative API test scenarios  
+- Validation of HTTP methods and status codes  
+- Response body and data consistency checks  
+- JSON Schema validation  
+- Environment-based configuration  
+- Pre-request scripts for dynamic test data and negative cases  
+
+---
 
 ## Tools & Technologies
-- Postman
-- JavaScript (Postman scripts)
-- JSON Schema validation
-- Public Weather APIs
+- **Postman**
+- **REST / HTTP**
+- **JSON & JSON Schema**
+- **JavaScript** (Postman scripts)
 
-## Project Structure
-```
+---
+
+## 📁 Project Structure
 postman/
-├── collections/
-│   ├── Weather API Testing Openweathermap.postman_collection.json
-│   └── Weather API Testing Open-meteo.postman_collection.json
-│
-├── environments/
-│   ├── openweather.postman_environment.json
-│   └── open-meteo.postman_environment.json
-│
+├── collections/     # Postman collections
+├── environments/    # Environment variables
 └── README.md
-```
 
-## How to Run
-1. Import the required collection into Postman
-2. Import the corresponding environment
-3. Set your API key locally (for OpenWeather)
-4. Run requests via Collection Runner or manually
+---
 
-Note:
-This project is primarily intended for demonstration and review.
-Collections are fully executable but not designed as a ready-to-run public tool.
+##  How to Run
+1. Import the collection into Postman  
+2. Import the corresponding environment  
+3. Set API keys locally (if required)  
+4. Run requests manually or via **Collection Runner**
 
-## Notes
-- API keys are not stored in the repository for security reasons
-- Negative tests dynamically override parameters via pre-request scripts
-- The project runs entirely inside Postman without external dependencies
+---
 
-## Author
-Polina Guller — QA Automation Engineer
+##  Notes
+- API keys are excluded from the repository for security reasons  
+- Tests are fully executable inside Postman  
+- No external dependencies are required  
+
+---
+
+ **Author**  
+**Polina Guller** — QA Engineer
