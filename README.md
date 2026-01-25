@@ -33,10 +33,12 @@ Designed as a **portfolio project** showcasing API testing practices for QA role
 ---
 
 ## 📁 Project Structure
+```
 postman/
-├── collections/     # Postman collections
-├── environments/    # Environment variables
+├── collections/      # Postman collections
+├── environments/     # Environment variables
 └── README.md
+```
 
 ---
 
