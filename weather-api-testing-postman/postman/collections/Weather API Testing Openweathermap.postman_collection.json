@@ -1,0 +1,1971 @@
+{
+	"info": {
+		"_postman_id": "6b4826b9-cc41-43af-babb-8870a4ffeb09",
+		"name": "Weather API Testing Openweathermap",
+		"description": "# **Weather API Testing (OpenWeather)**\n\n## 1\\. Project Summary\n\nThis collection provides automated functional and negative testing of the OpenWeather API  \n(Current Weather and 5-Day Forecast).\n\nThe goal is to verify correctness, stability, and input validation behavior of multiple endpoints  \nusing parameterized requests, schema validation, and pre-request scripting to simulate both valid  \nand invalid scenarios.\n\nThe project is designed to run entirely inside Postman and leverages:\n\n- Collection-level variables\n    \n- Environment-level variables\n    \n- Pre-request scripts for negative test manipulation\n    \n- Schema validation (JSON Schemas stored as collection variables)\n    \n- Logging to the Postman Console\n    \n- Collection Runner for execution\n    \n\nBase URLs\n\n- Current weather & Forecast: [https://api.openweathermap.org/data/2.5](https://api.openweathermap.org/data/2.5)\n    \n- Authentication: Uses the same base URL via API key query parameter\n    \n\n---\n\n## 2\\. Scope of Testing\n\nThis collection covers the following API functionalities:\n\n### **Authentication**\n\n- Valid API Key usage\n    \n- Invalid and missing key handling\n    \n\n### **Current Weather**\n\nTested by two access methods:\n\n- By **city name**\n    \n- By **geographical coordinates**\n    \n\nCoverage includes:\n\n- Positive functional tests\n    \n- Negative scenarios for:\n    \n    - Invalid and non-existing city names\n        \n    - Numeric and empty city values\n        \n    - Missing parameters\n        \n    - Latitude / longitude out-of-range values\n        \n    - Non-numeric coordinates\n        \n\n### **Forecast (5 Days)**\n\nCoverage includes:\n\n- Positive test with valid coordinates\n    \n- Negative tests for:\n    \n    - Missing latitude / longitude\n        \n    - Non-numeric coordinates\n        \n    - Out-of-range latitude / longitude\n        \n\n---\n\n## 3\\. Collection Structure\n\nHigh-level structure of this collection:\n\n```\nWeather API Testing – OpenWeather\n│\n├── Service\n│     └── Smoke\n│\n├── Authentication\n│     └── Negative\n│\n├── CurrentWeather\n│     ├── By City\n│     │      └── Negative\n│     └── By Coordinates\n│            └── Negative\n│\n├── Forecast\n│     └── Negative\n│\n└── Schemas stored in collection variables\n\n ```\n\nAll negative test requests use pre-request scripts to adjust request parameters without modifying environment defaults.\n\nNegative scenarios are grouped by access method (By City / By Coordinates) rather than by test type,  \nto reflect real API usage patterns and improve readability.\n\n---\n\n## 4\\. Environments\n\nThe collection uses one dedicated environment:\n\n**Environment:** `OpenWeather`\n\nContains operational variables such as:\n\n- `base_url`\n    \n- `endpoint_current_weather`\n    \n- `endpoint_forecast`\n    \n- `API_key`\n    \n- Default values for positive test parameters\n    \n- Predefined invalid values for negative scenarios (e.g., `latitude_invalid_string`, `city_missing`, etc.)\n    \n\nAll environment variables define default valid values.\n\nNegative test scenarios do NOT modify environment variables.  \nInstead, invalid parameters are injected locally at the request level  \nvia pre-request scripts.\n\n---\n\n## 5\\. Collection Variables\n\nCollection variables store reference assets for the project:\n\n- **JSON Schemas** for response validation\n    \n    - `current_weather_schema`\n        \n    - `forecast_schema`\n        \n    - `error_schema`\n        \n\nSchemas are used only in Tests section through:\n\n``` javascript\npm.expect(\n  tv4.validate(\n    pm.response.json(),\n    pm.collectionVariables.get(\"current_weather_schema\")\n  )\n).to.be.true;\n\n ```\n\n---\n\n## 6\\. Test Strategy\n\n### **Functional Tests**\n\nEach primary request validates:\n\n- HTTP status\n    \n- Required fields in the response\n    \n- Types and formats\n    \n- JSON Schema compliance\n    \n- Basic logging\n    \n\n### **Negative Tests**\n\nEvery negative test is a separate request with:\n\n- A specific pre-request script generating an invalid parameter\n    \n- Expected error code or error message\n    \n- Validation of error response schema\n    \n\nNegative tests focus on validating API behavior rather than strict error message contracts,  \nto ensure test stability against non-breaking backend changes.\n\n### **Test Naming Convention**\n\nTests follow the project-wide naming pattern:\n\n```\nTC_<Area>_<Endpoint>_<Scenario>\n\n ```\n\nExamples:\n\n- `TC_CurrentWeather_ByCity_InvalidCity`\n    \n- `TC_Forecast5DaysByCoordinates`\n    \n\n---\n\n## 7\\. Logging\n\nLogging is performed through the **Postman Console**, including:\n\n```\nconsole.log(\"Request URL:\", pm.request.url.toString());\nconsole.log(\"Response:\", pm.response.json());\n\n ```\n\nThis provides transparency during runs and debugging.\n\n---\n\n## 8\\. How to Run the Collection\n\n1. Import the collection into Postman.\n    \n2. Import the provided environment or create a new one.\n    \n3. Set the required environment variables.\n    \n    Required:\n    \n4. Select the environment in Postman.\n    \n5. Open Collection Runner.\n    \n6. Run the entire collection or selected folders.\n    \n\nNotes:\n\n- The API key is NOT stored in the repository for security reasons.\n    \n- Positive requests require a valid API key to return successful responses.\n    \n- Authentication negative tests (Missing / Invalid API Key) are designed to run without a real API key.\n    \n- Negative parameter tests construct invalid requests dynamically using pre-request scripts and do NOT modify environment variables.\n    \n\n---\n\n## 9\\. Limitations & Future Enhancements\n\n- Allure reports are not supported natively in Postman; console logging is used instead\n    \n- Integration with Newman + HTML report could be added later\n    \n- Schema set can be expanded to include additional fields\n    \n- Load and performance tests are out of scope for this collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "49437085",
+		"_collection_link": "https://www.postman.com/feerfeja-1807275/workspace/weather-api-testing/collection/49437085-6b4826b9-cc41-43af-babb-8870a4ffeb09?action=share&source=collection_link&creator=49437085"
+	},
+	"item": [
+		{
+			"name": "Service",
+			"item": [
+				{
+					"name": "TC_Health check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Basic success check\r",
+									"pm.test(\"Status code is 200\", () => {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"// Latency check\r",
+									"pm.test(\"Response time < 500ms\", () => {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(500);\r",
+									"});\r",
+									"\r",
+									"// Content type check\r",
+									"pm.test(\"Response is JSON\", () => {\r",
+									"    pm.response.to.be.json;\r",
+									"});\r",
+									"\r",
+									"// Unauthorized scenario check\r",
+									"pm.test(\"If unauthorized: return correct 401 response\", () => {\r",
+									"    const status = pm.response.code;\r",
+									"    if (status === 401) {\r",
+									"        const json = pm.response.json();\r",
+									"        pm.expect(json).to.have.property(\"message\");\r",
+									"        pm.expect(json.message.toLowerCase()).to.include(\"invalid api key\");\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"// Logging\r",
+									"console.log(\"Health response status:\", pm.response.code);\r",
+									"console.log(\"Response time:\", pm.response.responseTime + \" ms\");"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/weather?q={{city}}&appid={{API_key}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"weather"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "{{city}}"
+								},
+								{
+									"key": "appid",
+									"value": "{{API_key}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Ensures the weather service API is reachable and ready for further testing. Includes checks for status, latency, and valid response format."
+		},
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Negative",
+					"item": [
+						{
+							"name": "Missing API Key",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"let base = pm.environment.get(\"base_url\");\r",
+											"let endpoint = pm.environment.get(\"endpoint_current_weather\");\r",
+											"\r",
+											"let city = pm.variables.get(\"city\");\r",
+											"let apiKey = pm.variables.get(\"missing_api_key\");    \r",
+											"let units = pm.environment.get(\"units\");\r",
+											"\r",
+											"// building a NEW URL (for this run only)\r",
+											"let newUrl = `${base}${endpoint}?q=${city}&appid=${apiKey}&units=${units}`;\r",
+											"\r",
+											"// Substituting the request URL\r",
+											"pm.request.url = newUrl;\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// --- Safe JSON parsing ---\r",
+											"let json = {};\r",
+											"try {\r",
+											"    json = pm.response.json();\r",
+											"} catch (e) {\r",
+											"    json = {};\r",
+											"}\r",
+											"\r",
+											"// --- Status code strict ---\r",
+											"pm.test(\"Status code is 401 Unauthorized\", function () {\r",
+											"    pm.expect(pm.response.code).to.equal(401);\r",
+											"});\r",
+											"\r",
+											"// --- Message exists ---\r",
+											"pm.test(\"Error message exists\", function () {\r",
+											"    pm.expect(json).to.have.property(\"message\");\r",
+											"    pm.expect(json.message).to.be.a(\"string\").that.is.not.empty;\r",
+											"});\r",
+											"\r",
+											"// --- Content check (resilient) ---\r",
+											"pm.test(\"Error message is about invalid API key\", function () {\r",
+											"    pm.expect(json.message).to.be.a(\"string\");\r",
+											"    pm.expect(json.message.toLowerCase()).to.include(\"api key\");\r",
+											"});\r",
+											"\r",
+											"\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}{{endpoint_current_weather}}?q={{city}}&appid={{API_key}}&units={{units}}",
+									"host": [
+										"{{base_url}}{{endpoint_current_weather}}"
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": "{{city}}"
+										},
+										{
+											"key": "appid",
+											"value": "{{API_key}}"
+										},
+										{
+											"key": "units",
+											"value": "{{units}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Invalid API Key",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"let base = pm.environment.get(\"base_url\");\r",
+											"let endpoint = pm.environment.get(\"endpoint_current_weather\");\r",
+											"\r",
+											"let city = pm.variables.get(\"city\");\r",
+											"let apiKey = pm.variables.get(\"invalid_api_key\");   \r",
+											"let units = pm.environment.get(\"units\");\r",
+											"\r",
+											"// building a NEW URL (for this run only)\r",
+											"let newUrl = `${base}${endpoint}?q=${city}&appid=${apiKey}&units=${units}`;\r",
+											"\r",
+											"// Substituting the request URL\r",
+											"pm.request.url = newUrl;"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// --- Safe JSON parsing ---\r",
+											"let json = {};\r",
+											"try {\r",
+											"    json = pm.response.json();\r",
+											"} catch (e) {\r",
+											"    json = {};\r",
+											"}\r",
+											"\r",
+											"// --- Status code strict ---\r",
+											"pm.test(\"Status code is 401 Unauthorized\", function () {\r",
+											"    pm.expect(pm.response.code).to.equal(401);\r",
+											"});\r",
+											"\r",
+											"// --- Message exists ---\r",
+											"pm.test(\"Error message exists\", function () {\r",
+											"    pm.expect(json).to.have.property(\"message\");\r",
+											"    pm.expect(json.message).to.be.a(\"string\").that.is.not.empty;\r",
+											"});\r",
+											"\r",
+											"// --- Content check (resilient) ---\r",
+											"pm.test(\"Error message is about invalid API key\", function () {\r",
+											"    pm.expect(json.message).to.be.a(\"string\");\r",
+											"    pm.expect(json.message.toLowerCase()).to.include(\"api key\");\r",
+											"});\r",
+											"\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}{{endpoint_current_weather}}?q={{city}}&appid={{API_key}}&units={{units}}",
+									"host": [
+										"{{base_url}}{{endpoint_current_weather}}"
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": "{{city}}"
+										},
+										{
+											"key": "appid",
+											"value": "{{API_key}}"
+										},
+										{
+											"key": "units",
+											"value": "{{units}}"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "CurrentWeather",
+			"item": [
+				{
+					"name": "By City",
+					"item": [
+						{
+							"name": "Negative",
+							"item": [
+								{
+									"name": "Empty City",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint_current_weather\");\r",
+													"\r",
+													"let city = pm.variables.get(\"empty_city\");     // intentionally empty\r",
+													"let apiKey = pm.environment.get(\"API_key\");    // normal key, only city is broken\r",
+													"let units = pm.environment.get(\"units\");\r",
+													"\r",
+													"// Build a temporary URL with an empty city value\r",
+													"let newUrl = `${base}${endpoint}?q=${city}&appid=${apiKey}&units=${units}`;\r",
+													"\r",
+													"// Override request URL for this single request\r",
+													"pm.request.url = newUrl;\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safe JSON parsing ---\r",
+													"let json = {};\r",
+													"try {\r",
+													"    json = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    json = {};\r",
+													"}\r",
+													"\r",
+													"// --- Status code should be 400 or 404 ---\r",
+													"pm.test(\"Status code is 400 or 404\", function () {\r",
+													"    pm.expect(pm.response.code).to.be.oneOf([400, 404]);\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(json).to.have.any.keys(\"message\", \"error\");\r",
+													"    pm.expect((json.message || json.error)).to.be.a(\"string\").that.is.not.empty;\r",
+													"});\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint_current_weather}}?q={{city}}&appid={{API_key}}&units={{units}}",
+											"host": [
+												"{{base_url}}{{endpoint_current_weather}}"
+											],
+											"query": [
+												{
+													"key": "q",
+													"value": "{{city}}"
+												},
+												{
+													"key": "appid",
+													"value": "{{API_key}}"
+												},
+												{
+													"key": "units",
+													"value": "{{units}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "City with Numbers",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint_current_weather\");\r",
+													"\r",
+													"let city = pm.variables.get(\"city_with_numbers\");   // invalid city name\r",
+													"let apiKey = pm.environment.get(\"API_key\");         // normal API key\r",
+													"let units = pm.environment.get(\"units\");\r",
+													"\r",
+													"// Build URL with numeric city value\r",
+													"let newUrl = `${base}${endpoint}?q=${city}&appid=${apiKey}&units=${units}`;\r",
+													"\r",
+													"// Override request URL (isolated for this request)\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safe JSON parsing ---\r",
+													"let json = {};\r",
+													"try {\r",
+													"    json = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    json = {};\r",
+													"}\r",
+													"\r",
+													"// --- Status code should be 400 or 404 ---\r",
+													"pm.test(\"Status code is 400 or 404\", function () {\r",
+													"    pm.expect(pm.response.code).to.be.oneOf([400, 404]);\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(json).to.have.any.keys(\"message\", \"error\");\r",
+													"    pm.expect((json.message || json.error)).to.be.a(\"string\").that.is.not.empty;\r",
+													"});\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint_current_weather}}?q={{city}}&appid={{API_key}}&units={{units}}",
+											"host": [
+												"{{base_url}}{{endpoint_current_weather}}"
+											],
+											"query": [
+												{
+													"key": "q",
+													"value": "{{city}}"
+												},
+												{
+													"key": "appid",
+													"value": "{{API_key}}"
+												},
+												{
+													"key": "units",
+													"value": "{{units}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Non-Existing City",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint_current_weather\");\r",
+													"\r",
+													"let city = pm.variables.get(\"non_existing_city\");    // intentionally wrong city\r",
+													"let apiKey = pm.environment.get(\"API_key\");          // valid API key\r",
+													"let units = pm.environment.get(\"units\");\r",
+													"\r",
+													"// Construct URL with non-existing city\r",
+													"let newUrl = `${base}${endpoint}?q=${city}&appid=${apiKey}&units=${units}`;\r",
+													"\r",
+													"// Override request URL for this request only\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safe JSON parsing ---\r",
+													"let json = {};\r",
+													"try {\r",
+													"    json = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    json = {};\r",
+													"}\r",
+													"\r",
+													"// --- Status code should be 404 or 400 ---\r",
+													"pm.test(\"Status code is 400 or 404 for non-existing city\", function () {\r",
+													"    pm.expect(pm.response.code).to.be.oneOf([400, 404]);\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(json).to.have.any.keys(\"message\", \"error\");\r",
+													"    pm.expect((json.message || json.error)).to.be.a(\"string\").that.is.not.empty;\r",
+													"});\r",
+													"\r",
+													"// --- Error message is about city not found (resilient) ---\r",
+													"pm.test(\"Error message indicates city not found\", function () {\r",
+													"    const msg = (json.message || json.error || \"\").toLowerCase();\r",
+													"    pm.expect(msg).to.satisfy(m =>\r",
+													"        m.includes(\"city\") ||\r",
+													"        m.includes(\"not found\") ||\r",
+													"        m.includes(\"location\") ||\r",
+													"        m.includes(\"nothing\")    \r",
+													"    );\r",
+													"});\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint_current_weather}}?q={{city}}&appid={{API_key}}&units={{units}}",
+											"host": [
+												"{{base_url}}{{endpoint_current_weather}}"
+											],
+											"query": [
+												{
+													"key": "q",
+													"value": "{{city}}"
+												},
+												{
+													"key": "appid",
+													"value": "{{API_key}}"
+												},
+												{
+													"key": "units",
+													"value": "{{units}}"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "TC_CurrentWeatherByCity",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Include AJV\r",
+											"const Ajv = require('ajv');\r",
+											"const ajv = new Ajv({allErrors: true});\r",
+											"\r",
+											"// 1. Check status code\r",
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// 2. Validate JSON schema using AJV\r",
+											"pm.test(\"JSON schema is valid (AJV)\", function () {\r",
+											"    const jsonData = pm.response.json();\r",
+											"\r",
+											"    // Get schema from collection variable\r",
+											"    const schemaString = pm.collectionVariables.get(\"currentWeatherSchema_v1\");\r",
+											"    if (!schemaString) {\r",
+											"        throw new Error(\"Схема currentWeatherSchema_v1 не найдена в переменных коллекции\");\r",
+											"    }\r",
+											"\r",
+											"    const schema = JSON.parse(schemaString);\r",
+											"// Compile and validate schema\r",
+											"    const validate = ajv.compile(schema);\r",
+											"    const valid = validate(jsonData);\r",
+											"\r",
+											"    if (!valid) {\r",
+											"        console.error(\"Validation errors:\", validate.errors);\r",
+											"    }\r",
+											"\r",
+											"    pm.expect(valid, \"Response does not match schema\").to.be.true;\r",
+											"});\r",
+											"\r",
+											"// 3. Print results\r",
+											"pm.test(\"Print weather info\", function () {\r",
+											"    const data = pm.response.json();\r",
+											"    console.log(\"----- Weather Report -----\");\r",
+											"    console.log(`City: ${data.name} (${data.sys.country})`);\r",
+											"    console.log(`Temperature: ${data.main.temp}°C, Feels like: ${data.main.feels_like}°C`);\r",
+											"    console.log(`Weather: ${data.weather[0].main} - ${data.weather[0].description}`);\r",
+											"    console.log(`Wind: ${data.wind.speed} m/s, Direction: ${data.wind.deg}°`);\r",
+											"    console.log(`Humidity: ${data.main.humidity}%`);\r",
+											"    console.log(\"--------------------------\");\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"packages": {},
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}{{endpoint_current_weather}}?q={{city}}&appid={{API_key}}&units={{units}}",
+									"host": [
+										"{{base_url}}{{endpoint_current_weather}}"
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": "{{city}}"
+										},
+										{
+											"key": "appid",
+											"value": "{{API_key}}"
+										},
+										{
+											"key": "units",
+											"value": "{{units}}"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "By Coordinates",
+					"item": [
+						{
+							"name": "Negative",
+							"item": [
+								{
+									"name": "Missing Latitude",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint_current_weather\");\r",
+													"\r",
+													"let lat = pm.variables.get(\"missing_latitude\");   // intentionally empty\r",
+													"let lon = pm.environment.get(\"lon\");              // valid longitude from env\r",
+													"let apiKey = pm.environment.get(\"API_key\");\r",
+													"let units = pm.environment.get(\"units\");\r",
+													"\r",
+													"// Construct URL with missing lat value\r",
+													"let newUrl = `${base}${endpoint}?lat=${lat}&lon=${lon}&appid=${apiKey}&units=${units}`;\r",
+													"\r",
+													"// Override request URL locally\r",
+													"pm.request.url = newUrl;\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safe JSON parsing ---\r",
+													"let json = {};\r",
+													"try {\r",
+													"    json = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    json = {};\r",
+													"}\r",
+													"\r",
+													"// --- Status code should be 400 ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.expect(pm.response.code).to.eql(400);\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(json).to.have.any.keys(\"message\", \"error\");\r",
+													"    pm.expect((json.message || json.error))\r",
+													"        .to.be.a(\"string\")\r",
+													"        .that.is.not.empty;\r",
+													"});\r",
+													"\r",
+													"// --- Error message indicates missing/invalid latitude ---\r",
+													"pm.test(\"Error message is about missing or invalid latitude\", function () {\r",
+													"    const msg = (json.message || json.error || \"\").toLowerCase();\r",
+													"\r",
+													"    // Check if the error message contains any of the following keywords:\r",
+													"    pm.expect(msg).to.satisfy(m =>\r",
+													"        m.includes(\"latitude\") ||\r",
+													"        m.includes(\"nothing to geocode\") ||\r",
+													"        m.includes(\"wrong\") ||\r",
+													"        m.includes(\"invalid\") ||\r",
+													"        m.includes(\"bad\")\r",
+													"    );\r",
+													"});\r",
+													" "
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint_current_weather}}?lat={{lat}}&lon={{lon}}&appid={{API_key}}&units={{units}}",
+											"host": [
+												"{{base_url}}{{endpoint_current_weather}}"
+											],
+											"query": [
+												{
+													"key": "lat",
+													"value": "{{lat}}"
+												},
+												{
+													"key": "lon",
+													"value": "{{lon}}"
+												},
+												{
+													"key": "appid",
+													"value": "{{API_key}}"
+												},
+												{
+													"key": "units",
+													"value": "{{units}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Missing Longitude",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint_current_weather\");\r",
+													"\r",
+													"let lat = pm.environment.get(\"lat\");               // valid latitude\r",
+													"let lon = pm.variables.get(\"missing_longitude\");   // intentionally empty\r",
+													"let apiKey = pm.environment.get(\"API_key\");\r",
+													"let units = pm.environment.get(\"units\");\r",
+													"\r",
+													"// Construct URL for this negative scenario\r",
+													"let newUrl = `${base}${endpoint}?lat=${lat}&lon=${lon}&appid=${apiKey}&units=${units}`;\r",
+													"\r",
+													"// Override request URL locally\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.expect(pm.response.code).to.eql(400);\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    const json = pm.response.json();\r",
+													"    pm.expect(json.message || json.error).to.exist;\r",
+													"});\r",
+													"\r",
+													"pm.test(\"Error message is about missing coordinates\", function () {\r",
+													"    const json = pm.response.json();\r",
+													"    const message = (json.message || json.error || \"\").toLowerCase();\r",
+													"\r",
+													"    pm.expect(message).to.be.oneOf([\r",
+													"        \"nothing to geocode\",\r",
+													"        \"wrong longitude\",\r",
+													"        \"bad longitude\",\r",
+													"        \"invalid longitude\"\r",
+													"    ]);\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint_current_weather}}?lat={{lat}}&lon={{lon}}&appid={{API_key}}&units={{units}}",
+											"host": [
+												"{{base_url}}{{endpoint_current_weather}}"
+											],
+											"query": [
+												{
+													"key": "lat",
+													"value": "{{lat}}"
+												},
+												{
+													"key": "lon",
+													"value": "{{lon}}"
+												},
+												{
+													"key": "appid",
+													"value": "{{API_key}}"
+												},
+												{
+													"key": "units",
+													"value": "{{units}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Latitude Out of Range",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint_current_weather\");\r",
+													"\r",
+													"let lat = pm.environment.get(\"latitude_out_of_range\");   // 200\r",
+													"let lon = pm.environment.get(\"lon\");                     // valid\r",
+													"let apiKey = pm.environment.get(\"API_key\");\r",
+													"let units = pm.environment.get(\"units\");\r",
+													"\r",
+													"let newUrl = `${base}${endpoint}?lat=${lat}&lon=${lon}&appid=${apiKey}&units=${units}`;\r",
+													"\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safe JSON parsing ---\r",
+													"let json = {};\r",
+													"try {\r",
+													"    json = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    json = {};\r",
+													"}\r",
+													"\r",
+													"// --- Status code ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.expect(pm.response.code).to.equal(400);\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(json.message || json.error).to.exist;\r",
+													"});\r",
+													"\r",
+													"// --- Error relates to invalid latitude ---\r",
+													"pm.test(\"Error is related to invalid coordinates\", function () {\r",
+													"    const errorText = String(json.message || json.error).toLowerCase();\r",
+													"\r",
+													"    pm.expect(\r",
+													"        errorText.includes(\"lat\") ||\r",
+													"        errorText.includes(\"coordinate\") ||\r",
+													"        errorText.includes(\"range\") ||\r",
+													"        errorText.includes(\"geocode\")\r",
+													"    ).to.be.true;\r",
+													"});\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint_current_weather}}?lat={{lat}}&lon={{lon}}&appid={{API_key}}&units={{units}}",
+											"host": [
+												"{{base_url}}{{endpoint_current_weather}}"
+											],
+											"query": [
+												{
+													"key": "lat",
+													"value": "{{lat}}"
+												},
+												{
+													"key": "lon",
+													"value": "{{lon}}"
+												},
+												{
+													"key": "appid",
+													"value": "{{API_key}}"
+												},
+												{
+													"key": "units",
+													"value": "{{units}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Longitude Out of Range",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint_current_weather\");\r",
+													"\r",
+													"let lat = pm.environment.get(\"lat\");                     // valid\r",
+													"let lon = pm.environment.get(\"longitude_out_of_range\");   \r",
+													"let apiKey = pm.environment.get(\"API_key\");\r",
+													"let units = pm.environment.get(\"units\");\r",
+													"\r",
+													"let newUrl = `${base}${endpoint}?lat=${lat}&lon=${lon}&appid=${apiKey}&units=${units}`;\r",
+													"\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safe JSON parsing ---\r",
+													"let json = {};\r",
+													"try {\r",
+													"    json = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    json = {};\r",
+													"}\r",
+													"\r",
+													"// --- Status code ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.expect(pm.response.code).to.equal(400);\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(json.message || json.error).to.exist;\r",
+													"});\r",
+													"\r",
+													"// --- Error relates to invalid longitude ---\r",
+													"pm.test(\"Error is related to invalid coordinates\", function () {\r",
+													"    const errorText = String(json.message || json.error).toLowerCase();\r",
+													"\r",
+													"    pm.expect(\r",
+													"        errorText.includes(\"lon\") ||\r",
+													"        errorText.includes(\"coordinate\") ||\r",
+													"        errorText.includes(\"range\") ||\r",
+													"        errorText.includes(\"geocode\")\r",
+													"    ).to.be.true;\r",
+													"});\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint_current_weather}}?lat={{lat}}&lon={{lon}}&appid={{API_key}}&units={{units}}",
+											"host": [
+												"{{base_url}}{{endpoint_current_weather}}"
+											],
+											"query": [
+												{
+													"key": "lat",
+													"value": "{{lat}}"
+												},
+												{
+													"key": "lon",
+													"value": "{{lon}}"
+												},
+												{
+													"key": "appid",
+													"value": "{{API_key}}"
+												},
+												{
+													"key": "units",
+													"value": "{{units}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Non-Numeric Coordinates",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"// Get valid environment values\r",
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint_current_weather\");\r",
+													"let apiKey = pm.environment.get(\"API_key\");\r",
+													"let units = pm.environment.get(\"units\");\r",
+													"\r",
+													"// Get intentionally invalid coordinates\r",
+													"let lat = pm.environment.get(\"latitude_string\");     \r",
+													"let lon = pm.environment.get(\"longitude_string\");   \r",
+													"\r",
+													"// Construct URL for this negative scenario\r",
+													"let newUrl = `${base}${endpoint}?lat=${lat}&lon=${lon}&appid=${apiKey}&units=${units}`;\r",
+													"\r",
+													"// Override request URL only for this request\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safe JSON parsing ---\r",
+													"let json = {};\r",
+													"try {\r",
+													"    json = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    json = {};\r",
+													"}\r",
+													"\r",
+													"// --- Status code ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.expect(pm.response.code).to.equal(400);\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(json.message || json.error).to.exist;\r",
+													"});\r",
+													"\r",
+													"// --- Error relates to non-numeric coordinate ---\r",
+													"pm.test(\"Error message is about invalid coordinate format\", function () {\r",
+													"    const errorText = String(json.message || json.error).toLowerCase();\r",
+													"\r",
+													"    pm.expect(\r",
+													"        errorText.includes(\"invalid\") ||\r",
+													"        errorText.includes(\"wrong\") ||\r",
+													"        errorText.includes(\"bad\") ||\r",
+													"        errorText.includes(\"lat\") ||\r",
+													"        errorText.includes(\"lon\") ||\r",
+													"        errorText.includes(\"coordinate\")\r",
+													"    ).to.be.true;\r",
+													"});\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint_current_weather}}?lat={{lat}}&lon={{lon}}&appid={{API_key}}&units={{units}}",
+											"host": [
+												"{{base_url}}{{endpoint_current_weather}}"
+											],
+											"query": [
+												{
+													"key": "lat",
+													"value": "{{lat}}"
+												},
+												{
+													"key": "lon",
+													"value": "{{lon}}"
+												},
+												{
+													"key": "appid",
+													"value": "{{API_key}}"
+												},
+												{
+													"key": "units",
+													"value": "{{units}}"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "TC_CurrentWeatherByCoordinates",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Include AJV\r",
+											"const Ajv = require('ajv');\r",
+											"const ajv = new Ajv({allErrors: true});\r",
+											"\r",
+											"// 1. Check status code\r",
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// 2. Validate JSON schema using AJV\r",
+											"pm.test(\"JSON schema is valid (AJV)\", function () {\r",
+											"    const jsonData = pm.response.json();\r",
+											"\r",
+											"    // Get schema from collection variable\r",
+											"    const schemaString = pm.collectionVariables.get(\"currentWeatherSchema_v1\");\r",
+											"    if (!schemaString) {\r",
+											"        throw new Error(\"Schema currentWeatherSchema_v1 not found in collection variables\");\r",
+											"    }\r",
+											"\r",
+											"    const schema = JSON.parse(schemaString);\r",
+											"\r",
+											"    // Compile and validate schema\r",
+											"    const validate = ajv.compile(schema);\r",
+											"    const valid = validate(jsonData);\r",
+											"\r",
+											"    if (!valid) {\r",
+											"        console.error(\"Validation errors:\", validate.errors);\r",
+											"    }\r",
+											"\r",
+											"    pm.expect(valid, \"Response does not match schema\").to.be.true;\r",
+											"});\r",
+											"\r",
+											"// 3.  print results\r",
+											"pm.test(\"Print weather info\", function () {\r",
+											"    const data = pm.response.json();\r",
+											"    console.log(\"----- Weather Report -----\");\r",
+											"    console.log(`City: ${data.name} (${data.sys.country})`);\r",
+											"    console.log(`Coordinates: lat ${data.coord.lat}, lon ${data.coord.lon}`);\r",
+											"    console.log(`Temperature: ${data.main.temp}°C, Feels like: ${data.main.feels_like}°C`);\r",
+											"    console.log(`Weather: ${data.weather[0].main} - ${data.weather[0].description}`);\r",
+											"    console.log(`Wind: ${data.wind.speed} m/s, Direction: ${data.wind.deg}°`);\r",
+											"    console.log(`Humidity: ${data.main.humidity}%`);\r",
+											"    console.log(\"--------------------------\");\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}{{endpoint_current_weather}}?lat={{lat}}&lon={{lon}}&appid={{API_key}}&units={{units}}",
+									"host": [
+										"{{base_url}}{{endpoint_current_weather}}"
+									],
+									"query": [
+										{
+											"key": "lat",
+											"value": "{{lat}}"
+										},
+										{
+											"key": "lon",
+											"value": "{{lon}}"
+										},
+										{
+											"key": "appid",
+											"value": "{{API_key}}"
+										},
+										{
+											"key": "units",
+											"value": "{{units}}"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Forecast",
+			"item": [
+				{
+					"name": "Negative",
+					"item": [
+						{
+							"name": "Latitude (lat)",
+							"item": [
+								{
+									"name": "Invalid Latitude (string)",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint_forecast\");\r",
+													"let lon = pm.environment.get(\"lon\");                 // valid longitude\r",
+													"let apiKey = pm.environment.get(\"API_key\");\r",
+													"let units = pm.environment.get(\"units\");\r",
+													"\r",
+													"// Invalid latitude (string)\r",
+													"let lat = pm.environment.get(\"latitude_string\");     // abc\r",
+													"\r",
+													"// Construct URL for this negative scenario\r",
+													"let newUrl = `${base}${endpoint}?lat=${lat}&lon=${lon}&appid=${apiKey}&units=${units}`;\r",
+													"\r",
+													"// Override URL locally for this request\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safe JSON parsing ---\r",
+													"let json = {};\r",
+													"try {\r",
+													"    json = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    json = {};\r",
+													"}\r",
+													"\r",
+													"// --- Status code ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.expect(pm.response.code).to.equal(400);\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(json.message || json.error).to.exist;\r",
+													"});\r",
+													"\r",
+													"// --- Error relates to invalid latitude ---\r",
+													"pm.test(\"Error message is about invalid latitude format\", function () {\r",
+													"    const errorText = String(json.message || json.error).toLowerCase();\r",
+													"\r",
+													"    pm.expect(\r",
+													"        errorText.includes(\"lat\") ||\r",
+													"        errorText.includes(\"coordinate\") ||\r",
+													"        errorText.includes(\"wrong\") ||\r",
+													"        errorText.includes(\"invalid\") ||\r",
+													"        errorText.includes(\"bad\")\r",
+													"    ).to.be.true;\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint_forecast}}?lat={{lat}}&lon={{lon}}&appid={{API_key}}&units={{units}}",
+											"host": [
+												"{{base_url}}{{endpoint_forecast}}"
+											],
+											"query": [
+												{
+													"key": "lat",
+													"value": "{{lat}}"
+												},
+												{
+													"key": "lon",
+													"value": "{{lon}}"
+												},
+												{
+													"key": "appid",
+													"value": "{{API_key}}"
+												},
+												{
+													"key": "units",
+													"value": "{{units}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Latitude Out of Range",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint_forecast\");\r",
+													"\r",
+													"let lon = pm.environment.get(\"lon\");                     // valid longitude\r",
+													"let apiKey = pm.environment.get(\"API_key\");\r",
+													"let units = pm.environment.get(\"units\");\r",
+													"\r",
+													"// Out-of-range latitude\r",
+													"let lat = pm.environment.get(\"latitude_out_of_range\");\r",
+													"\r",
+													"// Construct URL \r",
+													"let newUrl = `${base}${endpoint}?lat=${lat}&lon=${lon}&appid=${apiKey}&units=${units}`;\r",
+													"\r",
+													"// Override URL locally for this request\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safe JSON parsing ---\r",
+													"let json = {};\r",
+													"try {\r",
+													"    json = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    json = {};\r",
+													"}\r",
+													"\r",
+													"// --- Status code ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.expect(pm.response.code).to.equal(400);\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(json.message || json.error).to.exist;\r",
+													"});\r",
+													"\r",
+													"// --- Error describes out-of-range latitude ---\r",
+													"pm.test(\"Error message refers to out-of-range latitude\", function () {\r",
+													"    const text = String(json.message || json.error).toLowerCase();\r",
+													"\r",
+													"    pm.expect(\r",
+													"        text.includes(\"lat\") ||\r",
+													"        text.includes(\"range\") ||\r",
+													"        text.includes(\"coordinate\") ||\r",
+													"        text.includes(\"invalid\") ||\r",
+													"        text.includes(\"geocode\") ||\r",
+													"        text.includes(\"wrong\")\r",
+													"    ).to.be.true;\r",
+													"});\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint_forecast}}?lat={{lat}}&lon={{lon}}&appid={{API_key}}&units={{units}}",
+											"host": [
+												"{{base_url}}{{endpoint_forecast}}"
+											],
+											"query": [
+												{
+													"key": "lat",
+													"value": "{{lat}}"
+												},
+												{
+													"key": "lon",
+													"value": "{{lon}}"
+												},
+												{
+													"key": "appid",
+													"value": "{{API_key}}"
+												},
+												{
+													"key": "units",
+													"value": "{{units}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Empty Latitude",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint_forecast\");\r",
+													"\r",
+													"let lon = pm.environment.get(\"lon\");                  // valid longitude\r",
+													"let apiKey = pm.environment.get(\"API_key\");\r",
+													"let units = pm.environment.get(\"units\");\r",
+													"\r",
+													"// Empty latitude from environment (value must be truly empty)\r",
+													"let lat = pm.environment.get(\"missing_latitude\");       // empty\r",
+													"\r",
+													"// Construct URL for this negative scenario\r",
+													"let newUrl = `${base}${endpoint}?lat=${lat}&lon=${lon}&appid=${apiKey}&units=${units}`;\r",
+													"\r",
+													"// Override URL locally for this request\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safe JSON parsing ---\r",
+													"let json = {};\r",
+													"try {\r",
+													"    json = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    json = {};\r",
+													"}\r",
+													"\r",
+													"// --- Status code should be 400 ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.expect(pm.response.code).to.equal(400);\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(json.message || json.error).to.exist;\r",
+													"});\r",
+													"\r",
+													"// --- Error message refers to missing/invalid latitude ---\r",
+													"pm.test(\"Error message refers to missing or invalid latitude\", function () {\r",
+													"    const text = String(json.message || json.error).toLowerCase();\r",
+													"\r",
+													"    pm.expect(\r",
+													"        text.includes(\"lat\") ||\r",
+													"        text.includes(\"missing\") ||\r",
+													"        text.includes(\"invalid\") ||\r",
+													"        text.includes(\"empty\") ||\r",
+													"        text.includes(\"geocode\") ||\r",
+													"        text.includes(\"bad\") ||\r",
+													"        text.includes(\"wrong\")\r",
+													"    ).to.be.true;\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint_forecast}}?lat={{lat}}&lon={{lon}}&appid={{API_key}}&units={{units}}",
+											"host": [
+												"{{base_url}}{{endpoint_forecast}}"
+											],
+											"query": [
+												{
+													"key": "lat",
+													"value": "{{lat}}"
+												},
+												{
+													"key": "lon",
+													"value": "{{lon}}"
+												},
+												{
+													"key": "appid",
+													"value": "{{API_key}}"
+												},
+												{
+													"key": "units",
+													"value": "{{units}}"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Longitude (lon)",
+							"item": [
+								{
+									"name": "Invalid Longitude (string)",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint_forecast\");\r",
+													"\r",
+													"let lat = pm.environment.get(\"lat\");                   // valid latitude\r",
+													"let apiKey = pm.environment.get(\"API_key\");\r",
+													"let units = pm.environment.get(\"units\");\r",
+													"\r",
+													"// Invalid longitude from environment (string)\r",
+													"let lon = pm.environment.get(\"longitude_string\");      // abc\r",
+													"\r",
+													"// Construct URL for this negative scenario\r",
+													"let newUrl = `${base}${endpoint}?lat=${lat}&lon=${lon}&appid=${apiKey}&units=${units}`;\r",
+													"\r",
+													"// Override URL locally for this request\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safely parse JSON ---\r",
+													"let jsonData;\r",
+													"try {\r",
+													"    jsonData = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    jsonData = null;\r",
+													"}\r",
+													"\r",
+													"// --- Status code ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"// --- Response is valid JSON ---\r",
+													"pm.test(\"Response is valid JSON\", function () {\r",
+													"    pm.expect(jsonData, \"Response body is not valid JSON\").to.be.an(\"object\");\r",
+													"});\r",
+													"\r",
+													"// --- Error object exists ---\r",
+													"pm.test(\"Error reason exists\", function () {\r",
+													"     pm.expect(jsonData.message || jsonData.error).to.exist;\r",
+													"});\r",
+													"\r",
+													"\r",
+													"\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint_forecast}}?lat={{lat}}&lon={{lon}}&appid={{API_key}}&units={{units}}",
+											"host": [
+												"{{base_url}}{{endpoint_forecast}}"
+											],
+											"query": [
+												{
+													"key": "lat",
+													"value": "{{lat}}"
+												},
+												{
+													"key": "lon",
+													"value": "{{lon}}"
+												},
+												{
+													"key": "appid",
+													"value": "{{API_key}}"
+												},
+												{
+													"key": "units",
+													"value": "{{units}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Longitude Out of Range",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint_forecast\");\r",
+													"\r",
+													"let lat = pm.environment.get(\"lat\");                         // valid latitude\r",
+													"let apiKey = pm.environment.get(\"API_key\");\r",
+													"let units = pm.environment.get(\"units\");\r",
+													"\r",
+													"// Out-of-range longitude taken from environment\r",
+													"let lon = pm.environment.get(\"longitude_out_of_range\");      // 300\r",
+													"\r",
+													"// Construct URL for this negative scenario\r",
+													"let newUrl = `${base}${endpoint}?lat=${lat}&lon=${lon}&appid=${apiKey}&units=${units}`;\r",
+													"\r",
+													"// Override URL locally for this request\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safely parse JSON ---\r",
+													"let jsonData;\r",
+													"try {\r",
+													"    jsonData = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    jsonData = null;\r",
+													"}\r",
+													"\r",
+													"// --- Status code ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"// --- JSON validity ---\r",
+													"pm.test(\"Response is valid JSON\", function () {\r",
+													"    pm.expect(jsonData, \"Response body is not valid JSON\").to.be.an(\"object\");\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(jsonData.message || jsonData.error || jsonData.cod).to.exist;\r",
+													"});\r",
+													"\r",
+													"// --- Content check: invalid longitude ---\r",
+													"pm.test(\"Error message indicates invalid longitude range\", function () {\r",
+													"    const msg = String(jsonData.message || jsonData.error || jsonData.cod).toLowerCase();\r",
+													"\r",
+													"    pm.expect(\r",
+													"        msg.includes(\"lon\") ||\r",
+													"        msg.includes(\"longitude\") ||\r",
+													"        msg.includes(\"range\") ||\r",
+													"        msg.includes(\"wrong\") ||\r",
+													"        msg.includes(\"invalid\") ||\r",
+													"        msg.includes(\"bad\")\r",
+													"    ).to.be.true;\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint_forecast}}?lat={{lat}}&lon={{lon}}&appid={{API_key}}&units={{units}}",
+											"host": [
+												"{{base_url}}{{endpoint_forecast}}"
+											],
+											"query": [
+												{
+													"key": "lat",
+													"value": "{{lat}}"
+												},
+												{
+													"key": "lon",
+													"value": "{{lon}}"
+												},
+												{
+													"key": "appid",
+													"value": "{{API_key}}"
+												},
+												{
+													"key": "units",
+													"value": "{{units}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Empty Longitude",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint_forecast\");\r",
+													"\r",
+													"let lat = pm.environment.get(\"lat\");                       // valid latitude\r",
+													"let apiKey = pm.environment.get(\"API_key\");\r",
+													"let units = pm.environment.get(\"units\");\r",
+													"\r",
+													"// Missing longitude from environment (empty value)\r",
+													"let lon = pm.environment.get(\"missing_longitude\");         // empty\r",
+													"\r",
+													"// Construct URL for this negative scenario\r",
+													"let newUrl = `${base}${endpoint}?lat=${lat}&lon=${lon}&appid=${apiKey}&units=${units}`;\r",
+													"\r",
+													"// Override URL locally for this request\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safely parse JSON ---\r",
+													"let jsonData;\r",
+													"try {\r",
+													"    jsonData = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    jsonData = null;\r",
+													"}\r",
+													"\r",
+													"// --- Status code ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"// --- JSON validity ---\r",
+													"pm.test(\"Response is valid JSON\", function () {\r",
+													"    pm.expect(jsonData, \"Response body is not valid JSON\").to.be.an(\"object\");\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(jsonData.message, \"No error message in response\").to.exist;\r",
+													"});\r",
+													"\r",
+													"\r",
+													"// --- cod field is 400 ---\r",
+													"pm.test(\"cod is 400 (string or number allowed)\", function () {\r",
+													"    pm.expect(String(jsonData.cod)).to.eql(\"400\");\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint_forecast}}?lat={{lat}}&lon={{lon}}&appid={{API_key}}&units={{units}}",
+											"host": [
+												"{{base_url}}{{endpoint_forecast}}"
+											],
+											"query": [
+												{
+													"key": "lat",
+													"value": "{{lat}}"
+												},
+												{
+													"key": "lon",
+													"value": "{{lon}}"
+												},
+												{
+													"key": "appid",
+													"value": "{{API_key}}"
+												},
+												{
+													"key": "units",
+													"value": "{{units}}"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "TC_Forecast5DaysByCoordinates",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Get response as text and parse JSON\r",
+									"let jsonData;\r",
+									"try {\r",
+									"    jsonData = JSON.parse(pm.response.text());\r",
+									"} catch (e) {\r",
+									"    jsonData = null;\r",
+									"}\r",
+									"\r",
+									"// Only run tests if JSON exists\r",
+									"if (jsonData) {\r",
+									"    // Schema validation\r",
+									"    pm.test(\"Forecast response matches schema\", function () {\r",
+									"        pm.expect(tv4.validate(jsonData, pm.collectionVariables.get(\"forecastSchema_v1\"))).to.be.true;\r",
+									"    });\r",
+									"\r",
+									"    // Status check\r",
+									"    pm.test(\"Response status is 200\", function () {\r",
+									"        pm.response.to.have.status(200);\r",
+									"    });\r",
+									"\r",
+									"    // Forecast list check\r",
+									"    pm.test(\"Forecast list exists and not empty\", function () {\r",
+									"        pm.expect(jsonData).to.have.property(\"list\");\r",
+									"        pm.expect(jsonData.list.length).to.be.above(0);\r",
+									"    });\r",
+									"\r",
+									"    // Pretty console output\r",
+									"    console.log(\"=== Forecast Summary ===\");\r",
+									"    jsonData.list.forEach((forecast, index) => {\r",
+									"        const time = forecast.dt_txt;\r",
+									"        const temp = forecast.main.temp.toFixed(1);\r",
+									"        const feelsLike = forecast.main.feels_like.toFixed(1);\r",
+									"        const description = forecast.weather[0].description;\r",
+									"        const wind = forecast.wind ? `${forecast.wind.speed.toFixed(1)} m/s` : \"N/A\";\r",
+									"        const humidity = forecast.main.humidity;\r",
+									"\r",
+									"        console.log(\r",
+									"            `${index + 1}. ${time} | Temp: ${temp}°C | Feels like: ${feelsLike}°C | ` +\r",
+									"            `Weather: ${description} | Wind: ${wind} | Humidity: ${humidity}%`\r",
+									"        );\r",
+									"    });\r",
+									"    console.log(\"========================\");\r",
+									"} else {\r",
+									"    console.log(\"Response body is empty or not valid JSON, skipping tests.\");\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{endpoint_forecast}}?lat={{lat}}&lon={{lon}}&appid={{API_key}}&units={{units}}",
+							"host": [
+								"{{base_url}}{{endpoint_forecast}}"
+							],
+							"query": [
+								{
+									"key": "lat",
+									"value": "{{lat}}"
+								},
+								{
+									"key": "lon",
+									"value": "{{lon}}"
+								},
+								{
+									"key": "appid",
+									"value": "{{API_key}}"
+								},
+								{
+									"key": "units",
+									"value": "{{units}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "apikey"
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "currentWeatherSchema_v1",
+			"value": ""
+		},
+		{
+			"key": "forecastSchema_v1",
+			"value": ""
+		}
+	]
+}

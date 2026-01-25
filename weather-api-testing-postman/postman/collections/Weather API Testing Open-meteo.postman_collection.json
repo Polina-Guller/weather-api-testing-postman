@@ -1,0 +1,1894 @@
+{
+	"info": {
+		"_postman_id": "74092c26-5aff-45c8-9ad1-cc8c472aaaf4",
+		"name": "Weather API Testing Open-meteo",
+		"description": "# Weather API Testing (Open-Meteo)\n\n## 1\\. Project Summary\n\nThis collection provides automated testing for the **Open-Meteo Historical Weather API**.\n\nThe primary focus is to validate parameter correctness, date range handling, and API behavior\n\nwhen processing invalid inputs such as incorrect coordinates, missing values, and invalid formats.\n\nThe project runs fully inside Postman and leverages:\n\n- Environment-level variables\n    \n- Pre-request scripts for negative testing\n    \n- Schema validation (JSON Schemas stored as collection variables)\n    \n- Detailed logging to the Postman Console\n    \n- Collection Runner for execution and comparison of scenarios\n    \n\n### Base URL\n\n[https://archive-api.open-meteo.com/v1/archive](https://archive-api.open-meteo.com/v1/archive)\n\nUsed for historical weather data retrieval.\n\n---\n\n## 2\\. Scope of Testing\n\n### Historical Weather (Primary Endpoint)\n\nCoverage includes:\n\n- Valid coordinate-based weather retrieval\n    \n- Date range validation\n    \n- Daily metrics parameter (`daily`)\n    \n- Temperature unit handling\n    \n\n### Negative Testing\n\nIncluded scenarios:\n\n- Invalid latitude (string)\n    \n- Latitude out of range\n    \n- Empty latitude\n    \n- Invalid longitude (string)\n    \n- Longitude out of range\n    \n- Empty longitude\n    \n- Latitude / longitude count mismatch\n    \n\nEach negative scenario is implemented as a **separate request**\n\nwith its own dedicated pre-request configuration.\n\n---\n\n## 3\\. Collection Structure\n\nHigh-level structure of the collection:\n\n```\nWeather API Testing – Open-Meteo\n│\n├── Service\n│     └── Health Check\n│\n├── Daily\n│     └── Negative\n│\n└── Hourly\n\n ```\n\n- **Service → Health Check** verifies endpoint availability\n    \n- Schemas are stored **only in collection variables** to avoid empty requests in the runner\n    \n\n---\n\n## 4\\. Environment\n\n**Environment:** `Open-Meteo`\n\nContains base configuration for valid requests:\n\n- `base_url`\n    \n- `endpoint`\n    \n- `latitude`\n    \n- `longitude`\n    \n- `start_date`\n    \n- `end_date`\n    \n- `daily`\n    \n- `temperature_unit`\n    \n\nNegative parameter values:\n\n- `latitude_invalid_string`\n    \n- `longitude_invalid_string`\n    \n- `latitude_out_of_range`\n    \n- `longitude_out_of_range`\n    \n- `latitude_empty`\n    \n- `longitude_empty`\n    \n- Arrays for mismatched coordinate count scenarios\n    \n\nDefault environment values represent **valid requests**.\n\nNegative test cases **do NOT modify environment variables**.\n\nInvalid parameters are injected locally at the request level\n\nvia pre-request scripts.\n\n---\n\n## 5\\. Collection Variables\n\nStored JSON Schemas:\n\n- `historical_weather_schema`\n    \n- `error_schema`\n    \n\nSchema validation example:\n\n```\npm.expect(\n  tv4.validate(\n    pm.response.json(),\n    pm.collectionVariables.get(\"historical_weather_schema\")\n  )\n).to.be.true;\n\n ```\n\n---\n\n## 6\\. Test Strategy\n\n### Functional Tests\n\nEach positive request validates:\n\n- HTTP status\n    \n- Presence of key response fields\n    \n- JSON Schema compliance\n    \n- Request and response logging\n    \n\n### Negative Tests\n\nEach negative request includes:\n\n- Dedicated pre-request logic to generate invalid input\n    \n- Expected error status or generalized error behavior\n    \n- Validation against `error_schema`\n    \n\nEnvironment variables remain unchanged across all scenarios.\n\n### Naming Convention\n\nTests follow a consistent naming pattern:\n\n```\nTC_HistoricalWeather_<Scenario>\n\n ```\n\nExamples:\n\n- `TC_HistoricalWeather_InvalidLatitudeString`\n    \n- `TC_HistoricalWeather_LongitudeOutOfRange`\n    \n\n---\n\n## 7\\. Logging\n\nLogging is performed via the Postman Console:\n\n```\nconsole.log(\"Request URL:\", pm.request.url.toString());\nconsole.log(\"Response:\", pm.response.json());\n\n ```\n\nThis allows clear visibility of constructed requests and API responses during execution.\n\n---\n\n## 8\\. How to Run the Collection\n\n1. Import the collection into Postman\n    \n2. Select the **Open-Meteo** environment\n    \n3. Open **Collection Runner**\n    \n4. Run the entire collection or selected folders\n    \n\n### Notes\n\n- Ensure the date range variables are valid\n    \n- Negative tests rely entirely on internal pre-request scripts\n    \n- No environment values are overwritten during execution\n    \n\n---\n\n## 9\\. Limitations & Future Enhancements\n\n- Advanced reporting can be added via Newman\n    \n- Additional date boundary and edge-case validations can be implemented\n    \n- Schema coverage can be expanded\n    \n- Load and performance testing is out of scope",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "49437085",
+		"_collection_link": "https://www.postman.com/feerfeja-1807275/workspace/weather-api-testing/collection/49437085-74092c26-5aff-45c8-9ad1-cc8c472aaaf4?action=share&source=collection_link&creator=49437085"
+	},
+	"item": [
+		{
+			"name": "Service",
+			"item": [
+				{
+					"name": "TC_Health check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Basic success check\r",
+									"pm.test(\"Status code is 200\", () => {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"// Latency check\r",
+									"pm.test(\"Response time < 500ms\", () => {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(500);\r",
+									"});\r",
+									"\r",
+									"// Content type check\r",
+									"pm.test(\"Response is JSON\", () => {\r",
+									"    pm.response.to.be.json;\r",
+									"});\r",
+									"\r",
+									"// Unauthorized scenario check\r",
+									"pm.test(\"If unauthorized: return correct 401 response\", () => {\r",
+									"    const status = pm.response.code;\r",
+									"    if (status === 401) {\r",
+									"        const json = pm.response.json();\r",
+									"        pm.expect(json).to.have.property(\"message\");\r",
+									"        pm.expect(json.message.toLowerCase()).to.include(\"invalid api key\");\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"// Logging\r",
+									"console.log(\"Health response status:\", pm.response.code);\r",
+									"console.log(\"Response time:\", pm.response.responseTime + \" ms\");"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{endpoint}}?latitude=52.52&longitude=13.41&start_date=2024-01-01&end_date=2024-01-02&daily=temperature_2m_max&temperature_unit=celsius",
+							"host": [
+								"{{base_url}}{{endpoint}}"
+							],
+							"query": [
+								{
+									"key": "latitude",
+									"value": "52.52"
+								},
+								{
+									"key": "longitude",
+									"value": "13.41"
+								},
+								{
+									"key": "start_date",
+									"value": "2024-01-01"
+								},
+								{
+									"key": "end_date",
+									"value": "2024-01-02"
+								},
+								{
+									"key": "daily",
+									"value": "temperature_2m_max"
+								},
+								{
+									"key": "temperature_unit",
+									"value": "celsius"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Ensures the weather service API is reachable and ready for further testing. Includes checks for status, latency, and valid response format."
+		},
+		{
+			"name": "Daily",
+			"item": [
+				{
+					"name": "Negative",
+					"item": [
+						{
+							"name": "Latitude",
+							"item": [
+								{
+									"name": "Invalid Latitude (string)",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint\");\r",
+													"\r",
+													"// Negative latitude from environment (string)\r",
+													"let latitude = pm.environment.get(\"latitude_string\");     // \"abc\"\r",
+													"\r",
+													"// Other valid values from environment\r",
+													"let longitude = pm.environment.get(\"longitude\");\r",
+													"let startDate = pm.environment.get(\"start_date\");\r",
+													"let endDate = pm.environment.get(\"end_date\");\r",
+													"let daily = pm.environment.get(\"daily\");\r",
+													"let tempUnit = pm.environment.get(\"temperature_unit\");\r",
+													"\r",
+													"// Construct URL for this negative scenario\r",
+													"let newUrl = `${base}${endpoint}?latitude=${latitude}&longitude=${longitude}&start_date=${startDate}&end_date=${endDate}&daily=${daily}&temperature_unit=${tempUnit}`;\r",
+													"\r",
+													"// Override request URL locally only for this request\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safely parse JSON ---\r",
+													"let jsonData;\r",
+													"try {\r",
+													"    jsonData = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    jsonData = null;\r",
+													"}\r",
+													"\r",
+													"// --- Status code ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"// --- Response is valid JSON ---\r",
+													"pm.test(\"Response is valid JSON\", function () {\r",
+													"    pm.expect(jsonData, \"Response body is not valid JSON\").to.be.an(\"object\");\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(jsonData.reason || jsonData.message).to.exist;\r",
+													"});\r",
+													"\r",
+													"// --- Error is related to invalid latitude ---\r",
+													"pm.test(\"Error reason mentions invalid latitude\", function () {\r",
+													"    const errorText = String(jsonData.reason || jsonData.message).toLowerCase();\r",
+													"\r",
+													"    pm.expect(\r",
+													"        errorText.includes(\"lat\") ||\r",
+													"        errorText.includes(\"latitude\") ||\r",
+													"        errorText.includes(\"coordinate\") ||\r",
+													"        errorText.includes(\"invalid\") ||\r",
+													"        errorText.includes(\"wrong\") ||\r",
+													"        errorText.includes(\"bad\")\r",
+													"    ).to.be.true;\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint}}?latitude={{latitude}}&longitude={{longitude}}&start_date={{start_date}}&end_date={{end_date}}&daily={{daily}}&temperature_unit={{temperature_unit}}",
+											"host": [
+												"{{base_url}}{{endpoint}}"
+											],
+											"query": [
+												{
+													"key": "latitude",
+													"value": "{{latitude}}"
+												},
+												{
+													"key": "longitude",
+													"value": "{{longitude}}"
+												},
+												{
+													"key": "start_date",
+													"value": "{{start_date}}"
+												},
+												{
+													"key": "end_date",
+													"value": "{{end_date}}"
+												},
+												{
+													"key": "daily",
+													"value": "{{daily}}"
+												},
+												{
+													"key": "temperature_unit",
+													"value": "{{temperature_unit}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Latitude Out Of Range",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint\");\r",
+													"\r",
+													"// Out-of-range latitude from environment\r",
+													"let latitude = pm.environment.get(\"latitude_out_of_range\");   // 200\r",
+													"\r",
+													"// Other valid parameters from environment\r",
+													"let longitude = pm.environment.get(\"longitude\");\r",
+													"let startDate = pm.environment.get(\"start_date\");\r",
+													"let endDate = pm.environment.get(\"end_date\");\r",
+													"let daily = pm.environment.get(\"daily\");\r",
+													"let tempUnit = pm.environment.get(\"temperature_unit\");\r",
+													"\r",
+													"// Construct URL for out-of-range latitude scenario\r",
+													"let newUrl = `${base}${endpoint}?latitude=${latitude}&longitude=${longitude}&start_date=${startDate}&end_date=${endDate}&daily=${daily}&temperature_unit=${tempUnit}`;\r",
+													"\r",
+													"// Override URL only for this request\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safely parse JSON ---\r",
+													"let jsonData;\r",
+													"try {\r",
+													"    jsonData = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    jsonData = null;\r",
+													"}\r",
+													"\r",
+													"// --- Status code ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"// --- Response is valid JSON ---\r",
+													"pm.test(\"Response is valid JSON\", function () {\r",
+													"    pm.expect(jsonData, \"Response body is not valid JSON\").to.be.an(\"object\");\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(jsonData.reason || jsonData.message).to.exist;\r",
+													"});\r",
+													"\r",
+													"// --- Error refers to out-of-range latitude ---\r",
+													"pm.test(\"Error reason indicates latitude out of range\", function () {\r",
+													"    const errorText = String(jsonData.reason || jsonData.message).toLowerCase();\r",
+													"\r",
+													"    pm.expect(\r",
+													"        errorText.includes(\"lat\") ||\r",
+													"        errorText.includes(\"latitude\") ||\r",
+													"        errorText.includes(\"range\") ||\r",
+													"        errorText.includes(\"invalid\") ||\r",
+													"        errorText.includes(\"out\") ||\r",
+													"        errorText.includes(\"bounds\") ||\r",
+													"        errorText.includes(\"coordinate\")\r",
+													"    ).to.be.true;\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint}}?latitude={{latitude}}&longitude={{longitude}}&start_date={{start_date}}&end_date={{end_date}}&daily={{daily}}&temperature_unit={{temperature_unit}}",
+											"host": [
+												"{{base_url}}{{endpoint}}"
+											],
+											"query": [
+												{
+													"key": "latitude",
+													"value": "{{latitude}}"
+												},
+												{
+													"key": "longitude",
+													"value": "{{longitude}}"
+												},
+												{
+													"key": "start_date",
+													"value": "{{start_date}}"
+												},
+												{
+													"key": "end_date",
+													"value": "{{end_date}}"
+												},
+												{
+													"key": "daily",
+													"value": "{{daily}}"
+												},
+												{
+													"key": "temperature_unit",
+													"value": "{{temperature_unit}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Empty Latitude",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint\");\r",
+													"\r",
+													"// Empty latitude from environment\r",
+													"let latitude = pm.environment.get(\"latitude_empty\");         // \"\"\r",
+													"\r",
+													"// Other required valid parameters\r",
+													"let longitude = pm.environment.get(\"longitude\");\r",
+													"let startDate = pm.environment.get(\"start_date\");\r",
+													"let endDate = pm.environment.get(\"end_date\");\r",
+													"let daily = pm.environment.get(\"daily\");\r",
+													"let tempUnit = pm.environment.get(\"temperature_unit\");\r",
+													"\r",
+													"// Construct URL for this negative scenario\r",
+													"let newUrl = `${base}${endpoint}?latitude=${latitude}&longitude=${longitude}&start_date=${startDate}&end_date=${endDate}&daily=${daily}&temperature_unit=${tempUnit}`;\r",
+													"\r",
+													"// Override request URL locally for this request\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safely parse JSON ---\r",
+													"let jsonData;\r",
+													"try {\r",
+													"    jsonData = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    jsonData = null;\r",
+													"}\r",
+													"\r",
+													"// --- Status code 400 ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.expect(pm.response.code).to.equal(400);\r",
+													"});\r",
+													"\r",
+													"// --- Response is valid JSON ---\r",
+													"pm.test(\"Response is valid JSON\", function () {\r",
+													"    pm.expect(jsonData, \"Response body is not valid JSON\").to.be.an(\"object\");\r",
+													"});\r",
+													"\r",
+													"// --- 'error' field exists and is boolean true ---\r",
+													"pm.test(\"'error' field exists and is true\", function () {\r",
+													"    pm.expect(jsonData).to.have.property(\"error\");\r",
+													"    pm.expect(jsonData.error).to.be.true;\r",
+													"});\r",
+													"\r",
+													"// --- 'reason' field exists and is a non-empty string ---\r",
+													"pm.test(\"'reason' field exists\", function () {\r",
+													"    pm.expect(jsonData).to.have.property(\"reason\");\r",
+													"    pm.expect(jsonData.reason).to.be.a(\"string\").that.is.not.empty;\r",
+													"});\r",
+													"\r",
+													"// --- Reason text is about invalid/mismatched longitude ---\r",
+													"pm.test(\"Reason text indicates an invalid longitude\", function () {\r",
+													"    const reason = jsonData.reason.toLowerCase();\r",
+													"\r",
+													"    pm.expect(\r",
+													"        reason.includes(\"longitude\") ||\r",
+													"        reason.includes(\"lon\") ||\r",
+													"        reason.includes(\"coordinate\") ||\r",
+													"        reason.includes(\"invalid\") ||\r",
+													"        reason.includes(\"element\") ||\r",
+													"        reason.includes(\"same number\")\r",
+													"    ).to.be.true;\r",
+													"});\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint}}?latitude={{latitude}}&longitude={{longitude}}&start_date={{start_date}}&end_date={{end_date}}&daily={{daily}}&temperature_unit={{temperature_unit}}",
+											"host": [
+												"{{base_url}}{{endpoint}}"
+											],
+											"query": [
+												{
+													"key": "latitude",
+													"value": "{{latitude}}"
+												},
+												{
+													"key": "longitude",
+													"value": "{{longitude}}"
+												},
+												{
+													"key": "start_date",
+													"value": "{{start_date}}"
+												},
+												{
+													"key": "end_date",
+													"value": "{{end_date}}"
+												},
+												{
+													"key": "daily",
+													"value": "{{daily}}"
+												},
+												{
+													"key": "temperature_unit",
+													"value": "{{temperature_unit}}"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Longitude",
+							"item": [
+								{
+									"name": "Invalid Longitude (string)",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint\");\r",
+													"\r",
+													"// Valid latitude\r",
+													"let latitude = pm.environment.get(\"latitude\");\r",
+													"\r",
+													"// Invalid longitude from environment (string)\r",
+													"let longitude = pm.environment.get(\"longitude_string\");      // \"abc\"\r",
+													"\r",
+													"// Other valid params\r",
+													"let startDate = pm.environment.get(\"start_date\");\r",
+													"let endDate = pm.environment.get(\"end_date\");\r",
+													"let daily = pm.environment.get(\"daily\");\r",
+													"let tempUnit = pm.environment.get(\"temperature_unit\");\r",
+													"\r",
+													"// Construct URL for invalid longitude scenario\r",
+													"let newUrl = `${base}${endpoint}?latitude=${latitude}&longitude=${longitude}&start_date=${startDate}&end_date=${endDate}&daily=${daily}&temperature_unit=${tempUnit}`;\r",
+													"\r",
+													"// Override URL only for this request\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safely parse JSON ---\r",
+													"let jsonData;\r",
+													"try {\r",
+													"    jsonData = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    jsonData = null;\r",
+													"}\r",
+													"\r",
+													"// --- Status code ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"// --- Response is valid JSON ---\r",
+													"pm.test(\"Response is valid JSON\", function () {\r",
+													"    pm.expect(jsonData, \"Response body is not valid JSON\").to.be.an(\"object\");\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(jsonData.reason || jsonData.message).to.exist;\r",
+													"});\r",
+													"\r",
+													"// --- Error refers to invalid longitude format ---\r",
+													"pm.test(\"Error reason indicates invalid longitude format\", function () {\r",
+													"    const errorText = String(jsonData.reason || jsonData.message).toLowerCase();\r",
+													"\r",
+													"    pm.expect(\r",
+													"        errorText.includes(\"lon\") ||\r",
+													"        errorText.includes(\"longitude\") ||\r",
+													"        errorText.includes(\"coordinate\") ||\r",
+													"        errorText.includes(\"invalid\") ||\r",
+													"        errorText.includes(\"wrong\") ||\r",
+													"        errorText.includes(\"bad\") ||\r",
+													"        errorText.includes(\"format\")\r",
+													"    ).to.be.true;\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint}}?latitude={{latitude}}&longitude={{longitude}}&start_date={{start_date}}&end_date={{end_date}}&daily={{daily}}&temperature_unit={{temperature_unit}}",
+											"host": [
+												"{{base_url}}{{endpoint}}"
+											],
+											"query": [
+												{
+													"key": "latitude",
+													"value": "{{latitude}}"
+												},
+												{
+													"key": "longitude",
+													"value": "{{longitude}}"
+												},
+												{
+													"key": "start_date",
+													"value": "{{start_date}}"
+												},
+												{
+													"key": "end_date",
+													"value": "{{end_date}}"
+												},
+												{
+													"key": "daily",
+													"value": "{{daily}}"
+												},
+												{
+													"key": "temperature_unit",
+													"value": "{{temperature_unit}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Longitude Out Of Range",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint\");\r",
+													"\r",
+													"// Valid latitude\r",
+													"let latitude = pm.environment.get(\"latitude\");\r",
+													"\r",
+													"// OUT OF RANGE longitude\r",
+													"let longitude = pm.environment.get(\"longitude_out_of_range\");      // e.g., 200\r",
+													"\r",
+													"// Other valid params\r",
+													"let startDate = pm.environment.get(\"start_date\");\r",
+													"let endDate = pm.environment.get(\"end_date\");\r",
+													"let daily = pm.environment.get(\"daily\");\r",
+													"let tempUnit = pm.environment.get(\"temperature_unit\");\r",
+													"\r",
+													"// Construct URL for out-of-range longitude\r",
+													"let newUrl = `${base}${endpoint}?latitude=${latitude}&longitude=${longitude}&start_date=${startDate}&end_date=${endDate}&daily=${daily}&temperature_unit=${tempUnit}`;\r",
+													"\r",
+													"// Override URL only for this test\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safely parse JSON ---\r",
+													"let jsonData;\r",
+													"try {\r",
+													"    jsonData = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    jsonData = null;\r",
+													"}\r",
+													"\r",
+													"// --- Status code ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"// --- Response is valid JSON ---\r",
+													"pm.test(\"Response is valid JSON\", function () {\r",
+													"    pm.expect(jsonData, \"Response body is not valid JSON\").to.be.an(\"object\");\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(jsonData.reason || jsonData.message).to.exist;\r",
+													"});\r",
+													"\r",
+													"// --- Error refers to longitude out of range ---\r",
+													"pm.test(\"Error reason indicates longitude out of allowed range\", function () {\r",
+													"    const errorText = String(jsonData.reason || jsonData.message).toLowerCase();\r",
+													"\r",
+													"    pm.expect(\r",
+													"        errorText.includes(\"longitude\") ||\r",
+													"        errorText.includes(\"lon\") ||\r",
+													"        errorText.includes(\"range\") ||\r",
+													"        errorText.includes(\"invalid\") ||\r",
+													"        errorText.includes(\"coordinate\") ||\r",
+													"        errorText.includes(\"wrong\") ||\r",
+													"        errorText.includes(\"out\")\r",
+													"    ).to.be.true;\r",
+													"});\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint}}?latitude={{latitude}}&longitude={{longitude}}&start_date={{start_date}}&end_date={{end_date}}&daily={{daily}}&temperature_unit={{temperature_unit}}",
+											"host": [
+												"{{base_url}}{{endpoint}}"
+											],
+											"query": [
+												{
+													"key": "latitude",
+													"value": "{{latitude}}"
+												},
+												{
+													"key": "longitude",
+													"value": "{{longitude}}"
+												},
+												{
+													"key": "start_date",
+													"value": "{{start_date}}"
+												},
+												{
+													"key": "end_date",
+													"value": "{{end_date}}"
+												},
+												{
+													"key": "daily",
+													"value": "{{daily}}"
+												},
+												{
+													"key": "temperature_unit",
+													"value": "{{temperature_unit}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Empty Longitude",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint\");\r",
+													"\r",
+													"// Valid latitude\r",
+													"let latitude = pm.environment.get(\"latitude\");\r",
+													"\r",
+													"// EMPTY longitude from environment\r",
+													"let longitude = pm.environment.get(\"longitude_empty\");     // empty string\r",
+													"\r",
+													"// Other valid params\r",
+													"let startDate = pm.environment.get(\"start_date\");\r",
+													"let endDate = pm.environment.get(\"end_date\");\r",
+													"let daily = pm.environment.get(\"daily\");\r",
+													"let tempUnit = pm.environment.get(\"temperature_unit\");\r",
+													"\r",
+													"// Construct URL for empty longitude\r",
+													"let newUrl = `${base}${endpoint}?latitude=${latitude}&longitude=${longitude}&start_date=${startDate}&end_date=${endDate}&daily=${daily}&temperature_unit=${tempUnit}`;\r",
+													"\r",
+													"// Override URL only for this test\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safely parse JSON ---\r",
+													"let jsonData;\r",
+													"try {\r",
+													"    jsonData = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    jsonData = null;\r",
+													"}\r",
+													"\r",
+													"// --- Status code ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"// --- Response is valid JSON ---\r",
+													"pm.test(\"Response is valid JSON\", function () {\r",
+													"    pm.expect(jsonData, \"Response body is not valid JSON\").to.be.an(\"object\");\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(jsonData.reason || jsonData.message).to.exist;\r",
+													"});\r",
+													"\r",
+													"// --- Reason refers to missing/invalid longitude ---\r",
+													"pm.test(\"Error reason indicates longitude is missing or invalid\", function () {\r",
+													"    const errorText = String(jsonData.reason || jsonData.message).toLowerCase();\r",
+													"\r",
+													"    pm.expect(\r",
+													"        errorText.includes(\"longitude\") ||\r",
+													"        errorText.includes(\"lon\") ||\r",
+													"        errorText.includes(\"missing\") ||\r",
+													"        errorText.includes(\"invalid\") ||\r",
+													"        errorText.includes(\"empty\") ||\r",
+													"        errorText.includes(\"coordinate\") ||\r",
+													"        errorText.includes(\"required\")\r",
+													"    ).to.be.true;\r",
+													"});\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint}}?latitude={{latitude}}&longitude={{longitude}}&start_date={{start_date}}&end_date={{end_date}}&daily={{daily}}&temperature_unit={{temperature_unit}}",
+											"host": [
+												"{{base_url}}{{endpoint}}"
+											],
+											"query": [
+												{
+													"key": "latitude",
+													"value": "{{latitude}}"
+												},
+												{
+													"key": "longitude",
+													"value": "{{longitude}}"
+												},
+												{
+													"key": "start_date",
+													"value": "{{start_date}}"
+												},
+												{
+													"key": "end_date",
+													"value": "{{end_date}}"
+												},
+												{
+													"key": "daily",
+													"value": "{{daily}}"
+												},
+												{
+													"key": "temperature_unit",
+													"value": "{{temperature_unit}}"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Date Range",
+							"item": [
+								{
+									"name": "Invalid Start Date Format",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint\");\r",
+													"\r",
+													"// Valid lat/lon\r",
+													"let latitude = pm.environment.get(\"latitude\");\r",
+													"let longitude = pm.environment.get(\"longitude\");\r",
+													"\r",
+													"// INVALID start date format from environment\r",
+													"let startDate = pm.environment.get(\"start_date_invalid_format\");\r",
+													"\r",
+													"// Valid end date\r",
+													"let endDate = pm.environment.get(\"end_date\");\r",
+													"\r",
+													"// Other params\r",
+													"let daily = pm.environment.get(\"daily\");\r",
+													"let tempUnit = pm.environment.get(\"temperature_unit\");\r",
+													"\r",
+													"// Construct URL for this invalid scenario\r",
+													"let newUrl = `${base}${endpoint}?latitude=${latitude}&longitude=${longitude}&start_date=${startDate}&end_date=${endDate}&daily=${daily}&temperature_unit=${tempUnit}`;\r",
+													"\r",
+													"// Override URL locally\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safely parse JSON ---\r",
+													"let jsonData;\r",
+													"try {\r",
+													"    jsonData = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    jsonData = null;\r",
+													"}\r",
+													"\r",
+													"// --- Status code should be 400 ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"// --- Response JSON validity ---\r",
+													"pm.test(\"Response is valid JSON\", function () {\r",
+													"    pm.expect(jsonData, \"Response body is not valid JSON\").to.be.an(\"object\");\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(jsonData.reason || jsonData.error || jsonData.message).to.exist;\r",
+													"});\r",
+													"\r",
+													"// --- Error message refers to invalid start_date format ---\r",
+													"pm.test(\"Error reason mentions invalid or malformed start_date\", function () {\r",
+													"    const errorText = String(jsonData.reason || jsonData.error || jsonData.message).toLowerCase();\r",
+													"\r",
+													"    pm.expect(\r",
+													"        errorText.includes(\"start\") ||\r",
+													"        errorText.includes(\"date\") ||\r",
+													"        errorText.includes(\"format\") ||\r",
+													"        errorText.includes(\"invalid\") ||\r",
+													"        errorText.includes(\"parse\") ||\r",
+													"        errorText.includes(\"iso\")\r",
+													"    ).to.be.true;\r",
+													"});\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint}}?latitude={{latitude}}&longitude={{longitude}}&start_date={{start_date}}&end_date={{end_date}}&daily={{daily}}&temperature_unit={{temperature_unit}}",
+											"host": [
+												"{{base_url}}{{endpoint}}"
+											],
+											"query": [
+												{
+													"key": "latitude",
+													"value": "{{latitude}}"
+												},
+												{
+													"key": "longitude",
+													"value": "{{longitude}}"
+												},
+												{
+													"key": "start_date",
+													"value": "{{start_date}}"
+												},
+												{
+													"key": "end_date",
+													"value": "{{end_date}}"
+												},
+												{
+													"key": "daily",
+													"value": "{{daily}}"
+												},
+												{
+													"key": "temperature_unit",
+													"value": "{{temperature_unit}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "End Date Earlier Than Start Date",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint\");\r",
+													"\r",
+													"// Valid latitude/longitude\r",
+													"let latitude = pm.environment.get(\"latitude\");\r",
+													"let longitude = pm.environment.get(\"longitude\");\r",
+													"\r",
+													"// Valid start date\r",
+													"let startDate = pm.environment.get(\"start_date\");\r",
+													"\r",
+													"// INVALID end date — earlier than start_date\r",
+													"let endDate = pm.environment.get(\"end_date_earlier_than_start\");\r",
+													"\r",
+													"// Other params\r",
+													"let daily = pm.environment.get(\"daily\");\r",
+													"let tempUnit = pm.environment.get(\"temperature_unit\");\r",
+													"\r",
+													"// Construct URL for this invalid scenario\r",
+													"let newUrl = `${base}${endpoint}?latitude=${latitude}&longitude=${longitude}&start_date=${startDate}&end_date=${endDate}&daily=${daily}&temperature_unit=${tempUnit}`;\r",
+													"\r",
+													"// Override URL locally\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safely parse JSON ---\r",
+													"let jsonData;\r",
+													"try {\r",
+													"    jsonData = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    jsonData = null;\r",
+													"}\r",
+													"\r",
+													"// --- Status code ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"// --- JSON validity ---\r",
+													"pm.test(\"Response is valid JSON\", function () {\r",
+													"    pm.expect(jsonData, \"Response body is not valid JSON\").to.be.an(\"object\");\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(jsonData.reason || jsonData.message || jsonData.error).to.exist;\r",
+													"});\r",
+													"\r",
+													"// --- Message indicates invalid date range ---\r",
+													"pm.test(\"Error mentions invalid or reversed date range\", function () {\r",
+													"    const text = String(jsonData.reason || jsonData.message || jsonData.error).toLowerCase();\r",
+													"\r",
+													"    pm.expect(\r",
+													"        text.includes(\"date\") ||\r",
+													"        text.includes(\"range\") ||\r",
+													"        text.includes(\"end\") ||\r",
+													"        text.includes(\"start\") ||\r",
+													"        text.includes(\"earlier\") ||\r",
+													"        text.includes(\"invalid\") ||\r",
+													"        text.includes(\"order\")\r",
+													"    ).to.be.true;\r",
+													"});\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint}}?latitude={{latitude}}&longitude={{longitude}}&start_date={{start_date}}&end_date={{end_date}}&daily={{daily}}&temperature_unit={{temperature_unit}}",
+											"host": [
+												"{{base_url}}{{endpoint}}"
+											],
+											"query": [
+												{
+													"key": "latitude",
+													"value": "{{latitude}}"
+												},
+												{
+													"key": "longitude",
+													"value": "{{longitude}}"
+												},
+												{
+													"key": "start_date",
+													"value": "{{start_date}}"
+												},
+												{
+													"key": "end_date",
+													"value": "{{end_date}}"
+												},
+												{
+													"key": "daily",
+													"value": "{{daily}}"
+												},
+												{
+													"key": "temperature_unit",
+													"value": "{{temperature_unit}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Missing Start Date",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint\");\r",
+													"\r",
+													"// Valid coordinates\r",
+													"let latitude = pm.environment.get(\"latitude\");\r",
+													"let longitude = pm.environment.get(\"longitude\");\r",
+													"\r",
+													"// MISSING start date\r",
+													"let startDate = pm.environment.get(\"start_date_missing\");   // empty\r",
+													"\r",
+													"// Valid end date\r",
+													"let endDate = pm.environment.get(\"end_date\");\r",
+													"\r",
+													"// Other parameters\r",
+													"let daily = pm.environment.get(\"daily\");\r",
+													"let tempUnit = pm.environment.get(\"temperature_unit\");\r",
+													"\r",
+													"// Construct URL with missing start_date\r",
+													"let newUrl = `${base}${endpoint}?latitude=${latitude}&longitude=${longitude}&start_date=${startDate}&end_date=${endDate}&daily=${daily}&temperature_unit=${tempUnit}`;\r",
+													"\r",
+													"// Override URL locally\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safely parse JSON ---\r",
+													"let jsonData;\r",
+													"try {\r",
+													"    jsonData = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    jsonData = null;\r",
+													"}\r",
+													"\r",
+													"// --- Status code ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"// --- JSON validity ---\r",
+													"pm.test(\"Response is valid JSON\", function () {\r",
+													"    pm.expect(jsonData, \"Response body is not valid JSON\").to.be.an(\"object\");\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(jsonData.reason || jsonData.message || jsonData.error).to.exist;\r",
+													"});\r",
+													"\r",
+													"// --- Error mentions missing start_date ---\r",
+													"pm.test(\"Error reason refers to missing or invalid start_date\", function () {\r",
+													"    const text = String(jsonData.reason || jsonData.message || jsonData.error).toLowerCase();\r",
+													"\r",
+													"    pm.expect(\r",
+													"        text.includes(\"start\") ||\r",
+													"        text.includes(\"date\") ||\r",
+													"        text.includes(\"missing\") ||\r",
+													"        text.includes(\"required\") ||\r",
+													"        text.includes(\"invalid\") ||\r",
+													"        text.includes(\"parse\") ||\r",
+													"        text.includes(\"empty\")\r",
+													"    ).to.be.true;\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint}}?latitude={{latitude}}&longitude={{longitude}}&start_date={{start_date}}&end_date={{end_date}}&daily={{daily}}&temperature_unit={{temperature_unit}}",
+											"host": [
+												"{{base_url}}{{endpoint}}"
+											],
+											"query": [
+												{
+													"key": "latitude",
+													"value": "{{latitude}}"
+												},
+												{
+													"key": "longitude",
+													"value": "{{longitude}}"
+												},
+												{
+													"key": "start_date",
+													"value": "{{start_date}}"
+												},
+												{
+													"key": "end_date",
+													"value": "{{end_date}}"
+												},
+												{
+													"key": "daily",
+													"value": "{{daily}}"
+												},
+												{
+													"key": "temperature_unit",
+													"value": "{{temperature_unit}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Missing End Date",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint\");\r",
+													"\r",
+													"// Valid coordinates\r",
+													"let latitude = pm.environment.get(\"latitude\");\r",
+													"let longitude = pm.environment.get(\"longitude\");\r",
+													"\r",
+													"// Valid start date\r",
+													"let startDate = pm.environment.get(\"start_date\");\r",
+													"\r",
+													"// MISSING end_date\r",
+													"let endDate = pm.environment.get(\"end_date_missing\");   // empty\r",
+													"\r",
+													"// Other parameters\r",
+													"let daily = pm.environment.get(\"daily\");\r",
+													"let tempUnit = pm.environment.get(\"temperature_unit\");\r",
+													"\r",
+													"// Construct URL for missing end_date scenario\r",
+													"let newUrl = `${base}${endpoint}?latitude=${latitude}&longitude=${longitude}&start_date=${startDate}&end_date=${endDate}&daily=${daily}&temperature_unit=${tempUnit}`;\r",
+													"\r",
+													"// Override URL locally\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safely parse JSON ---\r",
+													"let jsonData;\r",
+													"try {\r",
+													"    jsonData = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    jsonData = null;\r",
+													"}\r",
+													"\r",
+													"// --- Status code ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"// --- JSON validity ---\r",
+													"pm.test(\"Response is valid JSON\", function () {\r",
+													"    pm.expect(jsonData, \"Response body is not valid JSON\").to.be.an(\"object\");\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(jsonData.reason || jsonData.message || jsonData.error).to.exist;\r",
+													"});\r",
+													"\r",
+													"// --- Error refers to missing or invalid end_date ---\r",
+													"pm.test(\"Error reason mentions missing or invalid end_date\", function () {\r",
+													"    const text = String(jsonData.reason || jsonData.message || jsonData.error).toLowerCase();\r",
+													"\r",
+													"    pm.expect(\r",
+													"        text.includes(\"end\") ||\r",
+													"        text.includes(\"date\") ||\r",
+													"        text.includes(\"missing\") ||\r",
+													"        text.includes(\"required\") ||\r",
+													"        text.includes(\"empty\") ||\r",
+													"        text.includes(\"invalid\") ||\r",
+													"        text.includes(\"parse\")\r",
+													"    ).to.be.true;\r",
+													"});\r",
+													" "
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint}}?latitude={{latitude}}&longitude={{longitude}}&start_date={{start_date}}&end_date={{end_date}}&daily={{daily}}&temperature_unit={{temperature_unit}}",
+											"host": [
+												"{{base_url}}{{endpoint}}"
+											],
+											"query": [
+												{
+													"key": "latitude",
+													"value": "{{latitude}}"
+												},
+												{
+													"key": "longitude",
+													"value": "{{longitude}}"
+												},
+												{
+													"key": "start_date",
+													"value": "{{start_date}}"
+												},
+												{
+													"key": "end_date",
+													"value": "{{end_date}}"
+												},
+												{
+													"key": "daily",
+													"value": "{{daily}}"
+												},
+												{
+													"key": "temperature_unit",
+													"value": "{{temperature_unit}}"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Daily Parameter",
+							"item": [
+								{
+									"name": "Invalid Daily Parameter",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint\");\r",
+													"\r",
+													"// Valid coordinates\r",
+													"let latitude = pm.environment.get(\"latitude\");\r",
+													"let longitude = pm.environment.get(\"longitude\");\r",
+													"\r",
+													"// Valid start and end dates\r",
+													"let startDate = pm.environment.get(\"start_date\");\r",
+													"let endDate = pm.environment.get(\"end_date\");\r",
+													"\r",
+													"// Invalid daily parameter\r",
+													"let daily = pm.environment.get(\"invalid_daily\");\r",
+													"\r",
+													"// Other parameter\r",
+													"let tempUnit = pm.environment.get(\"temperature_unit\");\r",
+													"\r",
+													"// Construct URL with invalid daily\r",
+													"let newUrl = `${base}${endpoint}?latitude=${latitude}&longitude=${longitude}&start_date=${startDate}&end_date=${endDate}&daily=${daily}&temperature_unit=${tempUnit}`;\r",
+													"\r",
+													"// Override URL locally\r",
+													"pm.request.url = newUrl;\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safely parse JSON ---\r",
+													"let jsonData;\r",
+													"try {\r",
+													"    jsonData = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    jsonData = null;\r",
+													"}\r",
+													"\r",
+													"// --- Status code ---\r",
+													"pm.test(\"Status code is 400\", function () {\r",
+													"    pm.response.to.have.status(400);\r",
+													"});\r",
+													"\r",
+													"// --- JSON validity ---\r",
+													"pm.test(\"Response is valid JSON\", function () {\r",
+													"    pm.expect(jsonData, \"Response body is not valid JSON\").to.be.an(\"object\");\r",
+													"});\r",
+													"\r",
+													"// --- Error message exists ---\r",
+													"pm.test(\"Error message exists\", function () {\r",
+													"    pm.expect(jsonData.reason || jsonData.error || jsonData.message).to.exist;\r",
+													"});\r",
+													"\r",
+													"// --- Error mentions invalid daily parameter ---\r",
+													"pm.test(\"Error reason mentions invalid or unknown daily parameter\", function () {\r",
+													"    const text = String(jsonData.reason || jsonData.message || jsonData.error).toLowerCase();\r",
+													"\r",
+													"    pm.expect(\r",
+													"        text.includes(\"daily\") ||\r",
+													"        text.includes(\"parameter\") ||\r",
+													"        text.includes(\"invalid\") ||\r",
+													"        text.includes(\"unknown\") ||\r",
+													"        text.includes(\"unsupported\")\r",
+													"    ).to.be.true;\r",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint}}?latitude={{latitude}}&longitude={{longitude}}&start_date={{start_date}}&end_date={{end_date}}&daily={{daily}}&temperature_unit={{temperature_unit}}",
+											"host": [
+												"{{base_url}}{{endpoint}}"
+											],
+											"query": [
+												{
+													"key": "latitude",
+													"value": "{{latitude}}"
+												},
+												{
+													"key": "longitude",
+													"value": "{{longitude}}"
+												},
+												{
+													"key": "start_date",
+													"value": "{{start_date}}"
+												},
+												{
+													"key": "end_date",
+													"value": "{{end_date}}"
+												},
+												{
+													"key": "daily",
+													"value": "{{daily}}"
+												},
+												{
+													"key": "temperature_unit",
+													"value": "{{temperature_unit}}"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Temperature Unit",
+							"item": [
+								{
+									"name": "Invalid Temperature Unit",
+									"event": [
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"let base = pm.environment.get(\"base_url\");\r",
+													"let endpoint = pm.environment.get(\"endpoint\");\r",
+													"\r",
+													"// Valid coordinates\r",
+													"let latitude = pm.environment.get(\"latitude\");\r",
+													"let longitude = pm.environment.get(\"longitude\");\r",
+													"\r",
+													"// Valid start and end dates\r",
+													"let startDate = pm.environment.get(\"start_date\");\r",
+													"let endDate = pm.environment.get(\"end_date\");\r",
+													"\r",
+													"// Valid daily parameter\r",
+													"let daily = pm.environment.get(\"daily\");\r",
+													"\r",
+													"// Invalid temperature unit\r",
+													"let tempUnit = pm.environment.get(\"invalid_temperature_unit\");\r",
+													"\r",
+													"// Construct URL with invalid temperature unit\r",
+													"let newUrl = `${base}${endpoint}?latitude=${latitude}&longitude=${longitude}&start_date=${startDate}&end_date=${endDate}&daily=${daily}&temperature_unit=${tempUnit}`;\r",
+													"\r",
+													"// Override URL locally\r",
+													"pm.request.url = newUrl;"
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										},
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"// --- Safely parse JSON ---\r",
+													"let jsonData;\r",
+													"try {\r",
+													"    jsonData = pm.response.json();\r",
+													"} catch (e) {\r",
+													"    jsonData = null;\r",
+													"}\r",
+													"\r",
+													"// --- Status code is error (400 or 422) ---\r",
+													"pm.test(\"Status code indicates invalid parameter\", function () {\r",
+													"    pm.expect(pm.response.code).to.be.oneOf([400, 422]);\r",
+													"});\r",
+													"\r",
+													"// --- Response is valid JSON ---\r",
+													"pm.test(\"Response is valid JSON\", function () {\r",
+													"    pm.expect(jsonData).to.be.an(\"object\");\r",
+													"});\r",
+													"\r",
+													"// --- Error reason exists ---\r",
+													"pm.test(\"Error reason exists\", function () {\r",
+													"    pm.expect(jsonData.reason || jsonData.error || jsonData.message).to.exist;\r",
+													"});\r",
+													"\r",
+													"// --- Error text mentions temperature unit ---\r",
+													"pm.test(\"Error refers to invalid temperature unit\", function () {\r",
+													"    const msg = String(jsonData.reason || jsonData.error || jsonData.message).toLowerCase();\r",
+													"\r",
+													"    pm.expect(\r",
+													"        msg.includes(\"temperature\") ||\r",
+													"        msg.includes(\"unit\") ||\r",
+													"        msg.includes(\"invalid\") ||\r",
+													"        msg.includes(\"unsupported\") ||\r",
+													"        msg.includes(\"unknown\")\r",
+													"    ).to.be.true;\r",
+													"});\r",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {},
+												"requests": {}
+											}
+										}
+									],
+									"request": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "{{base_url}}{{endpoint}}?latitude={{latitude}}&longitude={{longitude}}&start_date={{start_date}}&end_date={{end_date}}&daily={{daily}}&temperature_unit={{temperature_unit}}",
+											"host": [
+												"{{base_url}}{{endpoint}}"
+											],
+											"query": [
+												{
+													"key": "latitude",
+													"value": "{{latitude}}"
+												},
+												{
+													"key": "longitude",
+													"value": "{{longitude}}"
+												},
+												{
+													"key": "start_date",
+													"value": "{{start_date}}"
+												},
+												{
+													"key": "end_date",
+													"value": "{{end_date}}"
+												},
+												{
+													"key": "daily",
+													"value": "{{daily}}"
+												},
+												{
+													"key": "temperature_unit",
+													"value": "{{temperature_unit}}"
+												}
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "TC_DailyHistoricalWeather",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									" /* ============================================================\r",
+									"   1. STATUS CODE\r",
+									"============================================================ */\r",
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"\r",
+									"/* ============================================================\r",
+									"   2. JSON PARSING CHECK\r",
+									"============================================================ */\r",
+									"pm.test(\"Response is valid JSON\", function () {\r",
+									"    pm.expect(() => pm.response.json()).not.to.throw();\r",
+									"});\r",
+									"\r",
+									"const json = pm.response.json();\r",
+									"\r",
+									"\r",
+									"/* ============================================================\r",
+									"   3. SCHEMA VALIDATION (AJV)\r",
+									"============================================================ */\r",
+									"pm.test(\"Response matches historicalDailySchema_v1\", function () {\r",
+									"    const schemaName = \"historicalDailySchema_v1\";\r",
+									"    let schema = pm.collectionVariables.get(schemaName);\r",
+									"\r",
+									"    pm.expect(schema, `Schema '${schemaName}' not found`).to.not.be.undefined;\r",
+									"\r",
+									"    try {\r",
+									"        schema = JSON.parse(schema);\r",
+									"    } catch (e) {\r",
+									"        throw new Error(`Schema '${schemaName}' is not valid JSON. Parse error: ${e}`);\r",
+									"    }\r",
+									"\r",
+									"    const json = pm.response.json();\r",
+									"\r",
+									"    const Ajv = require(\"ajv\");\r",
+									"    const ajv = new Ajv({ allErrors: true });\r",
+									"\r",
+									"    const validate = ajv.compile(schema);\r",
+									"    const valid = validate(json);\r",
+									"\r",
+									"    if (!valid) {\r",
+									"        console.log(\"=== SCHEMA VALIDATION ERRORS ===\");\r",
+									"        validate.errors.forEach((err) => {\r",
+									"            console.log(`Path: ${err.instancePath} | Message: ${err.message}`);\r",
+									"        });\r",
+									"    }\r",
+									"\r",
+									"    pm.expect(valid, \"Schema validation failed\").to.be.true;\r",
+									"});\r",
+									"\r",
+									"/* ============================================================\r",
+									"    WEATHER SUMMARY \r",
+									"============================================================ */\r",
+									"\r",
+									"console.log(\"\\n============= DAILY HISTORICAL WEATHER =============\");\r",
+									"\r",
+									"// Координаты\r",
+									"const lat = json.latitude;\r",
+									"const lon = json.longitude;\r",
+									"console.log(\"Location (lat, lon):        \", `${lat}, ${lon}`);\r",
+									"\r",
+									"// Дата\r",
+									"const date = json.daily?.time?.[0] || \"<no date>\";\r",
+									"console.log(\"Date:                        \", date);\r",
+									"\r",
+									"// Температура за день (максимальная)\r",
+									"let temp = \"<no temperature>\";\r",
+									"let unit = \"\";\r",
+									"\r",
+									"if (json.daily?.temperature_2m_max?.length > 0) {\r",
+									"    temp = json.daily.temperature_2m_max[0];\r",
+									"    unit = json.daily_units?.temperature_2m_max || \"°C\";\r",
+									"}\r",
+									"\r",
+									"console.log(\"Max Daily Temperature:       \", `${temp} ${unit}`);\r",
+									"\r",
+									"console.log(\"=====================================================\\n\");"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{endpoint}}?latitude={{latitude}}&longitude={{longitude}}&start_date={{start_date}}&end_date={{end_date}}&daily={{daily}}&temperature_unit={{temperature_unit}}",
+							"host": [
+								"{{base_url}}{{endpoint}}"
+							],
+							"query": [
+								{
+									"key": "latitude",
+									"value": "{{latitude}}"
+								},
+								{
+									"key": "longitude",
+									"value": "{{longitude}}"
+								},
+								{
+									"key": "start_date",
+									"value": "{{start_date}}"
+								},
+								{
+									"key": "end_date",
+									"value": "{{end_date}}"
+								},
+								{
+									"key": "daily",
+									"value": "{{daily}}"
+								},
+								{
+									"key": "temperature_unit",
+									"value": "{{temperature_unit}}"
+								}
+							]
+						},
+						"description": "Fetches historical daily maximum temperature for a specified location and date range using the Open-Meteo API."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Hourly",
+			"item": [
+				{
+					"name": "TC_HourlyHistoricalWeather",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"/* ============================================================\r",
+									"   BASIC SETUP\r",
+									"============================================================ */\r",
+									"const json = pm.response.json();\r",
+									"\r",
+									"/* ============================================================\r",
+									"   STATUS CODE\r",
+									"============================================================ */\r",
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"/* ============================================================\r",
+									"   BASIC JSON VALIDATION\r",
+									"============================================================ */\r",
+									"pm.test(\"Response is valid JSON\", function () {\r",
+									"    pm.expect(json).to.be.an(\"object\");\r",
+									"});\r",
+									"\r",
+									"/* ============================================================\r",
+									"   HEADERS CHECK\r",
+									"============================================================ */\r",
+									"pm.test(\"Content-Type is JSON\", function () {\r",
+									"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");\r",
+									"});\r",
+									"\r",
+									"/* ============================================================\r",
+									"   SCHEMA VALIDATION (AJV)\r",
+									"============================================================ */\r",
+									"pm.test(\"Response matches hourly schema\", function () {\r",
+									"    const schemaName = \"historicalHourlySchema_v1\";                // имя переменной\r",
+									"    let schema = pm.collectionVariables.get(schemaName);\r",
+									"\r",
+									"    pm.expect(schema, `Schema '${schemaName}' not found`).to.not.be.undefined;\r",
+									"\r",
+									"    // всегда храним ВСЕ схемы как строки → парсим\r",
+									"    try {\r",
+									"        schema = JSON.parse(schema);\r",
+									"    } catch (e) {\r",
+									"        throw new Error(`Schema '${schemaName}' is not valid JSON. Parse error: ${e}`);\r",
+									"    }\r",
+									"\r",
+									"    const Ajv = require(\"ajv\");\r",
+									"    const ajv = new Ajv({ allErrors: true });\r",
+									"\r",
+									"    const validate = ajv.compile(schema);\r",
+									"    const valid = validate(json);\r",
+									"\r",
+									"    if (!valid) {\r",
+									"        console.log(\"=== SCHEMA VALIDATION ERRORS ===\");\r",
+									"        validate.errors.forEach(err =>\r",
+									"            console.log(`Path: ${err.instancePath} | Message: ${err.message}`)\r",
+									"        );\r",
+									"    }\r",
+									"\r",
+									"    pm.expect(valid, \"Schema validation failed\").to.be.true;\r",
+									"});\r",
+									"\r",
+									"/* ============================================================\r",
+									"  RESULT OUTPUT\r",
+									"============================================================ */\r",
+									"const hourly = json.hourly || {};\r",
+									"const times = hourly.time || [];\r",
+									"const temps = hourly.temperature_2m || [];\r",
+									"\r",
+									"let output = \"\";\r",
+									"output += \"\\n==========================================\\n\";\r",
+									"output += \"     HOURLY TEMPERATURE REPORT\\n\";\r",
+									"output += \"==========================================\\n\";\r",
+									"output += `Location: ${json.latitude}, ${json.longitude}\\n`;\r",
+									"output += `Timezone: ${json.timezone}\\n\\n`;\r",
+									"output += \"Time → Temperature (°C)\\n\";\r",
+									"output += \"------------------------------------------\\n\";\r",
+									"\r",
+									"for (let i = 0; i < times.length; i++) {\r",
+									"    // replace \"T\" with space for readability\r",
+									"    const prettyTime = (times[i] || \"\").replace(\"T\", \" \");\r",
+									"    output += `${prettyTime}  →  ${temps[i]} °C\\n`;\r",
+									"}\r",
+									"\r",
+									"output += \"==========================================\\n\";\r",
+									"\r",
+									"console.log(output);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{endpoint}}?latitude={{latitude}}&longitude={{longitude}}&start_date={{start_date}}&end_date={{end_date}}&hourly={{hourly}}&temperature_unit={{temperature_unit}}",
+							"host": [
+								"{{base_url}}{{endpoint}}"
+							],
+							"query": [
+								{
+									"key": "latitude",
+									"value": "{{latitude}}"
+								},
+								{
+									"key": "longitude",
+									"value": "{{longitude}}"
+								},
+								{
+									"key": "start_date",
+									"value": "{{start_date}}"
+								},
+								{
+									"key": "end_date",
+									"value": "{{end_date}}"
+								},
+								{
+									"key": "hourly",
+									"value": "{{hourly}}"
+								},
+								{
+									"key": "temperature_unit",
+									"value": "{{temperature_unit}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "apikey"
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "historicalDailySchema_v1",
+			"value": ""
+		},
+		{
+			"key": "historicalHourlySchema_v1",
+			"value": ""
+		}
+	]
+}
